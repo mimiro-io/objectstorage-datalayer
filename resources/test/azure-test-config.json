@@ -1,0 +1,42 @@
+{
+    "id": "azure-test-local",
+    "storageBackends": [
+        {
+            "dataset": "azure-plain",
+            "storageType": "Azure",
+            "athenaCompatible": false,
+            "storeDeleted": true,
+            "stripProps": false,
+            "decode": {
+                "namespaces": {
+                    "a": "http://people/base",
+                    "b": "http://places/base"
+                }
+            },
+            "props": {
+                "region": "europe",
+                "endpoint": "http://localhost:8888",
+                "key": "myaccount1",
+                "secret": "XXXXXXXXXXXX",
+                "resourceName": "myaccount1"
+            }
+        },
+        {
+            "dataset": "azure-parquet",
+            "storageType": "Azure",
+            "storeDeleted": false,
+            "stripProps": true,
+            "parquet": {
+                "flushThreshold": 20,
+                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING); }"
+            },
+            "props": {
+                "region": "europe",
+                "endpoint": "http://localhost:8888",
+                "key": "myaccount1",
+                "secret": "XXXXXXXXXXXXXXX",
+                "resourceName": "myaccount1"
+            }
+        }
+    ]
+}

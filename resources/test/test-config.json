@@ -1,0 +1,16 @@
+{
+    "id": "storage-test",
+    "storageBackends": [
+        {
+            "dataset": "example.Stuff",
+            "storageType": "azure",
+            "authType": "ClientSecret",
+            "endpoint": "http://example.com:10000/myendpoint",
+            "resourcename": "example",
+            "storeDeleted": false,
+            "stripProps": true,
+            "key": "myaccount1",
+            "secret": ""
+        }
+    ]
+}

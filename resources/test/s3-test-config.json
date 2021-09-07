@@ -1,0 +1,116 @@
+{
+    "id": "test-local",
+    "storageBackends": [
+        {
+            "dataset": "s3-athena",
+            "storageType": "S3",
+            "athenaCompatible": true,
+            "storeDeleted": false,
+            "stripProps": false,
+            "decode": {
+                "namespaces": {
+                    "a": "http://people/base",
+                    "b": "http://places/base"
+                }
+            },
+            "props": {
+                "resourceName": "latest.json",
+                "bucket": "my-s3-bucket",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        },
+        {
+            "dataset": "s3-athena-stripped",
+            "storageType": "S3",
+            "athenaCompatible": true,
+            "storeDeleted": false,
+            "stripProps": true,
+            "decode": {
+                "namespaces": {
+                    "a": "http://people/base",
+                    "b": "http://places/base"
+                },
+                "propertyPrefixes": {
+                    "name": "a:a",
+                    "firstname": "a",
+                    "surname": "a",
+                    "age": "a",
+                    "vaccinated": "a",
+                    "address": "b"
+                },
+                "idProperty": "id",
+                "refs": ["address"]
+            },
+            "props": {
+                "resourceName": "latest.json",
+                "bucket": "my-s3-bucket",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        },
+        {
+            "dataset": "s3-athena-deletedTrue",
+            "storageType": "S3",
+            "athenaCompatible": true,
+            "storeDeleted": true,
+            "stripProps": false,
+            "props": {
+                "resourceName": "latest.json",
+                "bucket": "my-s3-bucket",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        },
+        {
+            "dataset": "s3-csv-mapping",
+            "storageType": "S3",
+            "storeDeleted": false,
+            "stripProps": false,
+            "csv": {
+                "header": true,
+                "encoding": "UTF-8",
+                "separator": ",",
+                "order": [
+                    "id",
+                    "firstname",
+                    "surname",
+                    "age",
+                    "vaccinated"
+                ]
+            },
+            "props": {
+                "bucket": "my-s3-bucket",
+                "resourceName": "test.csv",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        },
+        {
+            "dataset": "s3-parquet-mapping",
+            "storageType": "S3",
+            "storeDeleted": false,
+            "stripProps": true,
+            "parquet": {
+                "flushThreshold": 20,
+                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING); }"
+            },
+            "props": {
+                "bucket": "my-s3-bucket",
+                "resourceName": "test.parquet",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        }
+    ]
+}

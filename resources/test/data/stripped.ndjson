@@ -1,0 +1,3 @@
+{"age":41,"firstname":"Frank","id":"a:1","surname":"TheTank","vaccinated":false,"address": "b:1"}
+{"age":27,"firstname":"Fran","id":"a:2","surname":"TheTan","vaccinated":true,"address": "b:1"}
+{"age":67,"firstname":"Dan","id":"a:3","surname":"TheMan","vaccinated":true, "address": "b:2"}

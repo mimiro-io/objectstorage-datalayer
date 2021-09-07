@@ -1,0 +1,3 @@
+{"id":"a:1","deleted":false,"refs":{"b:address":"b:1"},"props":{"a:age":41,"a:firstname":"Frank","a:id":"a:1","a:surname":"TheTank","a:vaccinated":false}}
+{"id":"a:2","deleted":false,"refs":{"b:address":"b:1"},"props":{"a:age":27,"a:firstname":"Fran","a:id":"a:2","a:surname":"TheTan","a:vaccinated":true}}
+{"id":"a:3","deleted":false,"refs":{"b:address":"b:2"},"props":{"a:age":67,"a:firstname":"Dan","a:id":"a:3","a:surname":"TheMan","a:vaccinated":true}}

@@ -1,0 +1,20 @@
+[
+    {
+        "id": "@context",
+        "namespaces": {
+            "a": "http://people/base",
+            "b": "http://places/base"
+        }
+    },
+    {
+        "id": "a:2",
+        "props": {
+            "a:id": "a:2",
+            "a:firstname": "Fran",
+            "a:surname": "TheTan",
+            "a:age": 27,
+            "a:vaccinated": true,
+            "b:address": "b:1"
+        }
+    }
+]
