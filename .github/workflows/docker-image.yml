@@ -7,7 +7,7 @@ on:
 
 jobs:
   docker:
-    name: Deploy docker image
+    name: build docker image
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
