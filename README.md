@@ -1,13 +1,15 @@
-# Storage DataLayer
+# Object Storage - S3, Azure - Data Layer
 
-Datahub Data Layer for Storage, supported is S3 and Azure Blob
-You can either post a full dataset or incremental changes
+A Data Layer for AWS S3 and Azure Blob Storage that conforms to the Universal Data API specification (https://open.mimiro.io/specifications/uda/latest.html). This data layer can be used in conjunction with the MIMIRO data hub (https://github.com/mimiro-io/datahub) to create a modern data fabric. This data layer can be configured to write streams of entities or complete datasets as JSON or Parquest files to Azure Blob Storage and AWS S3.
+
+Releases of this data layer are published to docker hub in the repository: `mimiro/mysql-datalayer`
 
 ## API
 
 The service is an implementation of the [Universal Data API](https://open.mimiro.io/specifications/uda/latest.html).
 The main use is the [POST aspect](https://open.mimiro.io/specifications/uda/latest.html#post) of the API description, which
 can help to store datasets as files in cloud storage services.
+
 But the listing of datasets and retieval of existing storage objects as UDA entity batches are also available.
 
 ### POST entities

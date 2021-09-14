@@ -92,23 +92,8 @@ func TestAzure(t *testing.T) {
 			// Create the container on the service (with no metadata and public access)
 			_, err := containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
 			if err != nil {
-				//								t.Error(err)
+				// t.Error(err)
 			}
-			/*
-							//blobURL := containerURL.NewBlockBlobURL("/foo/2021/08/12/dfasdfhei.txt?Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==")
-							url,_ := url.Parse("http://localhost:10000/devstoreaccount1/local/azuretest/foo/2021/08/12/dfasdfhei.txt?")// +
-				//				"Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==")
-							blobURL := azblob.NewBlockBlobURL(
-								*url,
-								azblob.NewPipeline(cred, azblob.PipelineOptions{}))
-
-							res, err := azblob.UploadBufferToBlockBlob(ctx, []byte("hei"), blobURL, azblob.UploadToBlockBlobOptions{
-								BlockSize:   4 * 1024 * 1024,
-								Parallelism: 16})
-
-							t.Log(err)
-							t.Log(fmt.Sprintf("%+v",res))
-			*/
 		})
 		g.After(func() {
 			if azureContainer != nil {
