@@ -2,11 +2,13 @@ package store
 
 import (
 	"fmt"
-	"github.com/franela/goblin"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"testing"
 	"time"
+
+	"github.com/franela/goblin"
+
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 )
 
 func TestS3(t *testing.T) {

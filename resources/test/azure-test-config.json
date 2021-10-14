@@ -16,9 +16,9 @@
             "props": {
                 "region": "europe",
                 "endpoint": "http://localhost:8888",
-                "key": "myaccount1",
-                "secret": "XXXXXXXXXXXX",
-                "resourceName": "myaccount1"
+                "key": "devstoreaccount1",
+                "secret": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+                "resourceName": "devstoreaccount1"
             }
         },
         {
@@ -33,9 +33,9 @@
             "props": {
                 "region": "europe",
                 "endpoint": "http://localhost:8888",
-                "key": "myaccount1",
-                "secret": "XXXXXXXXXXXXXXX",
-                "resourceName": "myaccount1"
+                "key": "devstoreaccount1",
+                "secret": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
+                "resourceName": "devstoreaccount1"
             }
         }
     ]

@@ -3,14 +3,16 @@ package encoder
 import (
 	"errors"
 	"fmt"
+	"io"
+	"time"
+
 	goparquet "github.com/fraugster/parquet-go"
 	"github.com/fraugster/parquet-go/parquet"
 	"github.com/fraugster/parquet-go/parquetschema"
+	"go.uber.org/zap"
+
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
-	"go.uber.org/zap"
-	"io"
-	"time"
 )
 
 type ParquetEncoder struct {
@@ -24,7 +26,11 @@ type ParquetEncoder struct {
 }
 
 func (enc *ParquetEncoder) Close() error {
-	enc.logger.Infof("Finalizing parquet stream. flushing remaining rows with size: %v", enc.pqWriter.CurrentRowGroupSize())
+	if !enc.open {
+		return fmt.Errorf("nothing was added to file. Cannot write empty parquet file")
+	}
+	size := enc.pqWriter.CurrentRowGroupSize()
+	enc.logger.Infof("Finalizing parquet stream. flushing remaining rows with size: %v", size)
 	err := enc.pqWriter.Close()
 	if err != nil {
 		err2 := enc.writer.CloseWithError(err)
