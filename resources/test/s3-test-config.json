@@ -15,7 +15,7 @@
             },
             "props": {
                 "resourceName": "latest.json",
-                "bucket": "my-s3-bucket",
+                "bucket": "s3-test-bucket",
                 "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
                 "key": "AccessKeyId",
@@ -46,7 +46,7 @@
             },
             "props": {
                 "resourceName": "latest.json",
-                "bucket": "my-s3-bucket",
+                "bucket": "s3-test-bucket",
                 "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
                 "key": "AccessKeyId",
@@ -61,7 +61,7 @@
             "stripProps": false,
             "props": {
                 "resourceName": "latest.json",
-                "bucket": "my-s3-bucket",
+                "bucket": "s3-test-bucket",
                 "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
                 "key": "AccessKeyId",
@@ -86,7 +86,7 @@
                 ]
             },
             "props": {
-                "bucket": "my-s3-bucket",
+                "bucket": "s3-test-bucket",
                 "resourceName": "test.csv",
                 "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
@@ -104,7 +104,7 @@
                 "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING); }"
             },
             "props": {
-                "bucket": "my-s3-bucket",
+                "bucket": "s3-test-bucket",
                 "resourceName": "test.parquet",
                 "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
