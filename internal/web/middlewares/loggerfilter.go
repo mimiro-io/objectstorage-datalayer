@@ -79,7 +79,11 @@ func LoggerFilter(config LoggerConfig) echo.MiddlewareFunc {
 				fields = append(fields, zap.String("request_id", id))
 			}
 
-			config.Logger.Info(msg)
+			if res.Status != 200 {
+				config.Logger.Warn(msg)
+			} else {
+				config.Logger.Debug(msg)
+			}
 
 			return nil
 		}

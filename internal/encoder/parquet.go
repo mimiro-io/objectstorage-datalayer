@@ -29,8 +29,8 @@ func (enc *ParquetEncoder) Close() error {
 	if !enc.open {
 		return fmt.Errorf("nothing was added to file. Cannot write empty parquet file")
 	}
-	size := enc.pqWriter.CurrentRowGroupSize()
-	enc.logger.Infof("Finalizing parquet stream. flushing remaining rows with size: %v", size)
+	// size := enc.pqWriter.CurrentRowGroupSize()
+	// enc.logger.Infof("Finalizing parquet stream. flushing remaining rows with size: %v", size)
 	err := enc.pqWriter.Close()
 	if err != nil {
 		err2 := enc.writer.CloseWithError(err)
@@ -78,8 +78,8 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 			return 0, err
 		}
 		flushed := written - enc.pqWriter.CurrentRowGroupSize()
-		enc.logger.Infof("Flushed %v parquet bytes to underlying writer. flushed in total: %v",
-			flushed, enc.pqWriter.CurrentFileSize())
+		// enc.logger.Infof("Flushed %v parquet bytes to underlying writer. flushed in total: %v",
+		// 	flushed, enc.pqWriter.CurrentFileSize())
 		return int(flushed), nil
 	}
 	return 0, nil

@@ -4,17 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/labstack/echo/v4"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/store"
-	"go.uber.org/fx"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/labstack/echo/v4"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/store"
 )
 
 type datasetHandler struct {
@@ -109,9 +111,15 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 	datasetName, _ := url.QueryUnescape(c.Param("dataset"))
 
 	finalState := extractState(c.Request())
-	dh.logger.Infow(fmt.Sprintf("Header  - id %s, start %v, end %v", finalState.Id, finalState.Start, finalState.End),
-		"dataset", datasetName)
-	//we need the "end" flag only in the last step, for everything before in our parse loop we use an un-ended state
+	if finalState.Start {
+		dh.logger.Infow(fmt.Sprintf("Incoming new fullsync request for %v, id %s", datasetName, finalState.Id),
+			"dataset", datasetName)
+	}
+	if finalState.End {
+		dh.logger.Infow(fmt.Sprintf("Incoming finalize fullsync request for %v, id %s", datasetName, finalState.Id),
+			"dataset", datasetName)
+	}
+	// we need the "end" flag only in the last step, for everything before in our parse loop we use an un-ended state
 	state := store.FullSyncState{Id: finalState.Id, Start: finalState.Start}
 
 	// grab the storage backend
