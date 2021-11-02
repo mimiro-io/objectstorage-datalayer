@@ -342,12 +342,12 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 					_ = s3s.writer.CloseWithError(writeCtx.Err())
 				}
 			}()
-			_, err := s3s.writer.Write(entities)
+			written, err := s3s.writer.Write(entities)
 			writecancel()
 			if err != nil {
 				return err
 			}
-			//s3s.logger.Infof("piped %v entities into uploader. bytes written: %v", len(entities), written)
+			s3s.logger.Debugf("piped %v entities into uploader. bytes written: %v", len(entities), written)
 		}
 		// refresh between-request timeout
 		s3s.fullsyncTimout.Reset(fullsyncTimeoutDuration)
@@ -356,9 +356,9 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 			if err != nil {
 				return err
 			}
-			// s3s.logger.Info("waiting for uploader")
+			s3s.logger.Debug("waiting for uploader")
 			s3s.waitGroup.Wait()
-			// s3s.logger.Info("wait done")
+			s3s.logger.Debug("wait done")
 			s3s.fullsyncTimout.Stop()
 		}
 		return nil
