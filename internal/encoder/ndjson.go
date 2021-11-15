@@ -88,7 +88,15 @@ func (d *NDJsonDecoder) Read(p []byte) (n int, err error) {
 	// append one entity per line, comma separated
 	for d.scanner.Scan() {
 		var entityBytes []byte
-		entityBytes, err = toEntityBytes(d.scanner.Bytes(), d.backend)
+		if !d.backend.StripProps {
+			entityBytes = d.scanner.Bytes()
+		} else {
+			var line map[string]interface{}
+			if err = json.Unmarshal(d.scanner.Bytes(), &line); err != nil {
+				return
+			}
+			entityBytes, err = toEntityBytes(line, d.backend)
+		}
 		if err != nil {
 			return
 		}

@@ -53,7 +53,11 @@ func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 	properties := s3s.config.Properties
 	var key string
 	if properties.ResourceName != nil {
-		key = s3s.fullSyncFixedKey()
+		if *properties.CustomResourcePath {
+			key = fmt.Sprintf("%s", *properties.ResourceName)
+		} else {
+			key = s3s.fullSyncFixedKey()
+		}
 	} else {
 		keyPointer, err := s3s.findNewestKey("entities")
 		if err != nil {
