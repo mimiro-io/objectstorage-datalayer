@@ -49,7 +49,7 @@ func encodeOnce(backend conf.StorageBackend, entities []*entity.Entity) ([]byte,
 
 func decodeOnce(backend conf.StorageBackend, fileContent []byte) (io.Reader, error) {
 	reader, writer := io.Pipe()
-	dec, err := encoder.NewEntityDecoder(backend, reader, zap.NewNop().Sugar())
+	dec, err := encoder.NewEntityDecoder(backend, reader, "", zap.NewNop().Sugar())
 	if err != nil {
 		return nil, err
 	}
