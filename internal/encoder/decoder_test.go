@@ -10,14 +10,6 @@ import (
 func TestDecodeLine(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("The toEntityBytes function", func() {
-		g.It("Should return unstripped entities unmodified", func() {
-			input := `{"id":"a:1", "refs":{}, "props":{"a:id": "a:1", "a:name": "Hank"}}`
-			expected := input
-			backend := conf.StorageBackend{StripProps: false}
-			result, err := toEntityBytes([]byte(input), backend)
-			g.Assert(err).IsNil()
-			g.Assert(string(result)).Eql(expected)
-		})
 		g.It("Should return stripped entities with configured mappings in place", func() {
 			input := `{"id": "1", "name": "Hank"}`
 			expected := `{"id":"a:1", "deleted": false, "refs":{}, "props":{"a:id": "a:1", "a:name": "Hank"}}`
@@ -26,7 +18,9 @@ func TestDecodeLine(t *testing.T) {
 				PropertyPrefixes: map[string]string{"id": "a:a", "name": "a"},
 				IdProperty:       "id",
 			}}
-			result, err := toEntityBytes([]byte(input), backend)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
 			var resultMap map[string]interface{}
 			json.Unmarshal(result, &resultMap)
 			var expectedMap map[string]interface{}
@@ -42,7 +36,9 @@ func TestDecodeLine(t *testing.T) {
 				PropertyPrefixes: map[string]string{"id": "a", "name": "b", "hobby": ""},
 				IdProperty:       "id",
 			}}
-			result, err := toEntityBytes([]byte(input), backend)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
 			var resultMap map[string]interface{}
 			json.Unmarshal(result, &resultMap)
 			var expectedMap map[string]interface{}
@@ -59,7 +55,9 @@ func TestDecodeLine(t *testing.T) {
 				IdProperty:       "id",
 				Refs:             []string{"hobby"},
 			}}
-			result, err := toEntityBytes([]byte(input), backend)
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
 			var resultMap map[string]interface{}
 			json.Unmarshal(result, &resultMap)
 			var expectedMap map[string]interface{}
