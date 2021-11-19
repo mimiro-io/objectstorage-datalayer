@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
@@ -19,6 +20,7 @@ type FlatFileDecoder struct {
 	open     bool
 	closed   bool
 	overhang []byte
+	since    string
 }
 
 func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
@@ -46,31 +48,30 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 	for d.scanner.Scan() {
 
 		line := d.scanner.Text()
-		d.logger.Infof("Got line : '%s'", line)
-		var entityProps = make(map[string]interface{}, 0)
-		for key, field := range d.backend.FlatFileConfig.Fields {
-			value := ""
-			for _, sub := range field.Substring {
-				value += line[sub[0]:sub[1]]
-			}
-			valueWithType, err := d.convertType(value, field)
-			if err != nil {
-				return 0, err
-			}
-			entityProps[key] = valueWithType
-
+		//d.logger.Debugf("Got line : '%s'", line)
+		entityProps, err := d.ParseLine(line, d.backend.FlatFileConfig)
+		if err != nil {
+			return 0, err
 		}
 
 		var entityBytes []byte
 		entityBytes, err = toEntityBytes(entityProps, d.backend)
 		if err != nil {
-			return
+			return 0, err
 		}
 		buf = append(buf, append([]byte(","), entityBytes...)...)
 		if n, err, done = d.flush(p, buf); done {
-			return
+			return 0, err
 		}
 	}
+
+	// Add continuation token
+	entity := map[string]interface{}{
+		"id":    "@continuation",
+		"token": d.since,
+	}
+	sinceBytes, err := json.Marshal(entity)
+	buf = append(buf, append([]byte(","), sinceBytes...)...)
 
 	// close json array
 	if !d.closed {
@@ -126,4 +127,21 @@ func (d *FlatFileDecoder) convertType(value string, fieldConfig conf.FlatFileFie
 		return value, nil
 	}
 
+}
+
+func (d *FlatFileDecoder) ParseLine(line string, config *conf.FlatFileConfig) (map[string]interface{}, error) {
+	var entityProps = make(map[string]interface{}, 0)
+	for key, field := range config.Fields {
+		value := ""
+		for _, sub := range field.Substring {
+			value += line[sub[0]:sub[1]]
+		}
+		valueWithType, err := d.convertType(value, field)
+		if err != nil {
+			return nil, err
+		}
+		entityProps[key] = valueWithType
+
+	}
+	return entityProps, nil
 }

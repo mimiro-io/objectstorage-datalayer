@@ -20,7 +20,7 @@ type StorageInterface interface {
 	StoreEntities(entities []*entity.Entity) error
 	StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error
 	GetEntities() (io.Reader, error)
-	GetChanges() (io.Reader, error)
+	GetChanges(since string) (io.Reader, error)
 }
 
 func GenerateContent(entities []*entity.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {

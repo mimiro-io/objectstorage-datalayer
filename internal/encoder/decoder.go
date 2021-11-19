@@ -15,13 +15,13 @@ type EncodingEntityReader interface {
 	io.Reader
 }
 
-func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, logger *zap.SugaredLogger) (EncodingEntityReader, error) {
+func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, since string, logger *zap.SugaredLogger) (EncodingEntityReader, error) {
 	if backend.AthenaCompatible {
 		return &NDJsonDecoder{backend: backend, reader: reader, logger: logger}, nil
 	}
 
 	if backend.FlatFileConfig != nil {
-		return &FlatFileDecoder{backend: backend, reader: reader, logger: logger}, nil
+		return &FlatFileDecoder{backend: backend, reader: reader, logger: logger, since: since}, nil
 	}
 
 	return nil, errors.New("this dataset has no decoder")

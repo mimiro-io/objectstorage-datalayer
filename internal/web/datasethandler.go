@@ -49,6 +49,13 @@ func NewDatasetHandler(lc fx.Lifecycle, e *echo.Echo, logger *zap.SugaredLogger,
 }
 func (dh *datasetHandler) getChangesHandler(c echo.Context) error {
 	c.Set("changes", true)
+
+	since := c.QueryParam("since")
+	if since != "" {
+		s, _ := url.QueryUnescape(since)
+		c.Set("since", s)
+	}
+
 	return dh.getDatasetHandler(c)
 }
 
@@ -63,9 +70,14 @@ func (dh *datasetHandler) getDatasetHandler(c echo.Context) error {
 	}
 	var reader io.Reader
 	if c.Get("changes") == true {
-		reader, err = storage.GetChanges()
+		since := c.Get("since")
+		reader, err = storage.GetChanges(fmt.Sprintf("%s", since))
 	} else {
 		reader, err = storage.GetEntities()
+	}
+	if err != nil {
+		dh.logger.Errorw(err.Error(), "dataset", datasetName)
+		return echo.ErrInternalServerError
 	}
 	_, err = io.Copy(c.Response().Writer, reader)
 	if err != nil {

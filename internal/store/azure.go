@@ -30,7 +30,7 @@ func (azStorage *AzureStorage) GetEntities() (io.Reader, error) {
 	return nil, errors.New("GetEntities not supported for AzureStorage")
 }
 
-func (azStorage *AzureStorage) GetChanges() (io.Reader, error) {
+func (azStorage *AzureStorage) GetChanges(since string) (io.Reader, error) {
 	return nil, errors.New("GetChanges not supported for AzureStorage")
 }
 
