@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/franela/goblin"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"io"
 	"testing"
 )
 
@@ -57,6 +58,27 @@ func TestDecodeLine(t *testing.T) {
 			}}
 			var m map[string]interface{}
 			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+	})
+	g.Describe("The FlatFile decoder", func() {
+		g.It("Should produce a valid UDA entity from fixed width flat file line", func() {
+			input := `JOHNSMITH01021990987654321`
+			expected := `{"deleted":false,"id":"987654321","props":{"_:born":"01021990","_:firstname":"JOHN","_:lastname":"SMITH","_:phone":"987654321"},"refs":{}}`
+			config := `{"flatFile":{"fields":{"phone":{"substring":[[17,26]]},"firstname":{"substring":[[0,4]]},"lastname":{"substring":[[4,9]]},"born":{"substring":[[9,17]]}}},"decode":{"defaultNamespace":"_","namespaces":{"_":"http://test.example.io/person/info/"},"idProperty":"phone"}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+			reader, _ := io.Pipe()
+			decoder := &FlatFileDecoder{backend: backend, reader: reader, logger: nil, since: ""}
+			m, err := decoder.ParseLine(input, backend.FlatFileConfig)
+			g.Assert(err).IsNil()
+
 			result, err := toEntityBytes(m, backend)
 			var resultMap map[string]interface{}
 			json.Unmarshal(result, &resultMap)
