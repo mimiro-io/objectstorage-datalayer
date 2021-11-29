@@ -256,7 +256,7 @@ property name | description
 `decode.refs` | list of object keys that should be placed into refs instead of props. prefixes from propertiesPrefixes are still applied.
 `decode.defaultNamespace` | One of the defined namespaces under `decode.namespaces`. Will be used for all properties not specified under `decode.propertyPrefixes.
 `flatFile.fields` | Map of field configs. The key will be the property name in the output entity.
-`flatFile.fields.substring` | A two level array to decalare string indices to use in substring. i.e. [[0,5]]
+`flatFile.fields.substring` | A two-dimensional array to declare string indices to use in substring. i.e. [[0,5]]
 `flatFile.fields.type` | Declare type of the parsed field. Available types are string,int,float,date. Default: string.
 `flatFile.fields.decimals` | Can be used to declare how many decimals in a parsed float.
 `flatFile.fields.dateLayout` | Must be present for parsing date. Declare with standard go date format layout.
