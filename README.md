@@ -195,6 +195,30 @@ Depending on storage type and security requirements the configuration of each da
         "refs": [
             "field2"
         ]
+    },
+    "flatFile": {
+        "fields": {
+            "birthdate": {
+                "substring": [[0,8]]
+            },
+            "phone": {
+                "substring": [[8,17]]
+            },
+            "startDate": {
+                "substring":  [[17, 25]],
+                "type": "date",
+                "dateLayout": "20060102"
+            },
+            "zip": {
+                "substring": [[25, 29]],
+                "type": "integer"
+            },
+            "score": {
+                "substring": [[29, 32]],
+                "type": "float",
+                "decimals": 2
+            }
+        }
     }
 }
 ```
@@ -475,6 +499,20 @@ A complete example can be found under "resources/test/test-config.json"
                     },
                     "phone": {
                         "substring": [[8,17]]
+                    },
+                    "startDate": {
+                        "substring":  [[17, 25]],
+                        "type": "date",
+                        "dateLayout": "20060102"
+                    },
+                    "zip": {
+                        "substring": [[25, 29]],
+                        "type": "integer"
+                    },
+                    "score": {
+                        "substring": [[29, 32]],
+                        "type": "float",
+                        "decimals": 2
                     }
                 }
             },
