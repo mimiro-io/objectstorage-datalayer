@@ -5,6 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"sort"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -12,16 +18,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
+
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/schema"
-	"go.uber.org/zap"
-	"io"
-	"sort"
-	"strconv"
-	"sync"
-	"time"
 )
 
 type S3Storage struct {
@@ -345,7 +347,7 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 			if err != nil {
 				return err
 			}
-			s3s.logger.Infof("piped %v entities into uploader. bytes written: %v", len(entities), written)
+			s3s.logger.Debugf("piped %v entities into uploader. bytes written: %v", len(entities), written)
 		}
 		// refresh between-request timeout
 		s3s.fullsyncTimout.Reset(fullsyncTimeoutDuration)
@@ -354,9 +356,9 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 			if err != nil {
 				return err
 			}
-			s3s.logger.Info("waiting for uploader")
+			s3s.logger.Debug("waiting for uploader")
 			s3s.waitGroup.Wait()
-			s3s.logger.Info("wait done")
+			s3s.logger.Debug("wait done")
 			s3s.fullsyncTimout.Stop()
 		}
 		return nil
