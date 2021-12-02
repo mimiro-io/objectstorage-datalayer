@@ -52,7 +52,8 @@ type ParquetConfig struct {
 }
 
 type FlatFileConfig struct {
-	Fields map[string]FlatFileField `json:"fields"`
+	Fields     map[string]FlatFileField `json:"fields"`
+	FieldOrder []string                 `json:"fieldOrder"`
 }
 
 type FlatFileField struct {

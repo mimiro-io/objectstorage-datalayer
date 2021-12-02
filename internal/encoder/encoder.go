@@ -28,6 +28,10 @@ func NewEntityEncoder(backend conf.StorageBackend, writer *io.PipeWriter, logger
 		return &NDJsonEncoder{backend: backend, writer: writer, logger: logger}
 	}
 
+	if backend.FlatFileConfig != nil {
+		return &FlatFileEncoder{backend: backend, writer: writer, logger: logger}
+	}
+
 	return &JSONEncoder{backend: backend, writer: writer, logger: logger}
 }
 
