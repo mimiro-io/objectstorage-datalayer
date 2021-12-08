@@ -106,7 +106,7 @@ func (enc *FlatFileEncoder) encode(entities []*entity.Entity) ([]byte, error) {
 						preppedValue = appendSpaces(value, diff)
 					}
 				} else if valueLength > fieldSize {
-					preppedValue = value[fieldSize:]
+					preppedValue = value[:fieldSize]
 				} else {
 					preppedValue = value
 				}
