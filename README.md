@@ -271,6 +271,10 @@ property name | description
 
 * by providing a `parquet` object in a dataset configuration, files are encoded as parquet files. Parquet encoding requires a parquet schema to describe the columns and data types of the target files.
 
+* by providing a `flatFile` configuration, the flatFile encoder will be enabled.
+
+If more than one of the mentioned encoders are configured (*not recommended*), it will choose the first in line.
+
 ##### parquet schemas
 
 The parquet encoder needs a textual schema definition. The [specification](https://pkg.go.dev/github.com/fraugster/parquet-go/parquetschema) of parquetschema is mostly supported.
@@ -296,6 +300,8 @@ must be provided like this:
 #### Decoders
 
 Currently there is support for decoding ndjson (athena) formatted s3 files and fixed width flat files.
+
+If more than one decoder is configured (*not recommended*), it will choose the first in line. (ndjson)
 
 ##### Ndjson
 
