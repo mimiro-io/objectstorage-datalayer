@@ -156,6 +156,7 @@ type FlatFileDecoder struct {
 	closed   bool
 	overhang []byte
 	since    string
+	fullSync bool
 }
 
 func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
@@ -200,11 +201,16 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 			return
 		}
 	}
-
+	var token string
+	if d.fullSync {
+		token = ""
+	} else {
+		token = d.since
+	}
 	// Add continuation token
 	entity := map[string]interface{}{
 		"id":    "@continuation",
-		"token": d.since,
+		"token": token,
 	}
 	sinceBytes, err := json.Marshal(entity)
 	buf = append(buf, append([]byte(","), sinceBytes...)...)

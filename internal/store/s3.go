@@ -81,7 +81,7 @@ func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 			_ = reader.CloseWithError(err)
 		}
 	}()
-	return encoder.NewEntityDecoder(s3s.config, reader, "", s3s.logger)
+	return encoder.NewEntityDecoder(s3s.config, reader, "", s3s.logger, true)
 }
 
 func (s3s *S3Storage) GetChanges(since string) (io.Reader, error) {
@@ -123,7 +123,7 @@ func (s3s *S3Storage) GetChanges(since string) (io.Reader, error) {
 			}
 		}
 	}()
-	return encoder.NewEntityDecoder(s3s.config, reader, latestLastModified, s3s.logger)
+	return encoder.NewEntityDecoder(s3s.config, reader, latestLastModified, s3s.logger, false)
 }
 
 func (s3s *S3Storage) ExportSchema() error {
