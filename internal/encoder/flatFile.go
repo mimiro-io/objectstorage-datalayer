@@ -184,19 +184,20 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 
 		line := d.scanner.Text()
 		//d.logger.Debugf("Got line : '%s'", line)
-		entityProps, err := d.ParseLine(line, d.backend.FlatFileConfig)
+		var entityProps map[string]interface{}
+		entityProps, err = d.ParseLine(line, d.backend.FlatFileConfig)
 		if err != nil {
-			return 0, err
+			return
 		}
 
 		var entityBytes []byte
 		entityBytes, err = toEntityBytes(entityProps, d.backend)
 		if err != nil {
-			return 0, err
+			return
 		}
 		buf = append(buf, append([]byte(","), entityBytes...)...)
 		if n, err, done = d.flush(p, buf); done {
-			return 0, err
+			return
 		}
 	}
 
