@@ -53,7 +53,7 @@ func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 	properties := s3s.config.Properties
 	var key string
 	if properties.ResourceName != nil {
-		if *properties.CustomResourcePath {
+		if properties.CustomResourcePath != nil && *properties.CustomResourcePath {
 			key = fmt.Sprintf("%s", *properties.ResourceName)
 		} else {
 			key = s3s.fullSyncFixedKey()
@@ -443,7 +443,7 @@ type FileObject struct {
 
 func (s3s *S3Storage) findObjects(folder string) ([]FileObject, error) {
 	var path string
-	if *s3s.config.Properties.CustomResourcePath {
+	if s3s.config.Properties.CustomResourcePath != nil && *s3s.config.Properties.CustomResourcePath {
 		path = *s3s.config.Properties.ResourceName
 	} else {
 		path = "datasets/" + s3s.config.Dataset + "/" + folder

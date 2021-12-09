@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package main
@@ -68,10 +69,11 @@ func TestS3(t *testing.T) {
 				endpoint = l.Endpoint(localstack.S3)
 			}
 			awsSession, _ = session.NewSession(&aws.Config{
-				Credentials: credentials.NewStaticCredentials("not", "empty", ""),
-				DisableSSL:  aws.Bool(true),
-				Region:      aws.String(endpoints.UsWest1RegionID),
-				Endpoint:    aws.String(endpoint),
+				Credentials:      credentials.NewStaticCredentials("not", "empty", ""),
+				DisableSSL:       aws.Bool(true),
+				Region:           aws.String(endpoints.UsWest1RegionID),
+				Endpoint:         aws.String(endpoint),
+				S3ForcePathStyle: aws.Bool(true),
 			})
 			s3Service = s3.New(awsSession)
 			s3Service.CreateBucket((&s3.CreateBucketInput{}).SetBucket("s3-test-bucket"))
@@ -605,7 +607,7 @@ func TestS3(t *testing.T) {
 			g.Assert(entities[3]["id"]).Eql("a:3")
 			g.Assert(entities[3]["refs"]).Eql(map[string]interface{}{"b:address": "b:2"})
 			g.Assert(entities[3]["props"]).Eql(map[string]interface{}{
-				"a:age": 67, "a:firstname": "Dan", "a:surname": "TheMan", "a:vaccinated": true})
+				"a:age": 67, "a:firstname": "Dan", "a:surname": "TheMan", "a:vaccinated": true, "id": "a:3"})
 		})
 	})
 }
