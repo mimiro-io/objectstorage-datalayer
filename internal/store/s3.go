@@ -51,34 +51,47 @@ func (sw sequentialWriter) WriteAt(p []byte, offset int64) (n int, err error) {
 func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 	reader, writer := io.Pipe()
 	properties := s3s.config.Properties
-	var key string
+	//var key string
+	var files []string
 	if properties.ResourceName != nil {
 		if properties.CustomResourcePath != nil && *properties.CustomResourcePath {
-			key = fmt.Sprintf("%s", *properties.ResourceName)
+			//key = fmt.Sprintf("%s", *properties.ResourceName)
+			fileObjs, err := s3s.findObjects("entities")
+			if err != nil {
+				return nil, err
+			}
+			for _, f := range fileObjs {
+				files = append(files, f.FilePath)
+			}
 		} else {
-			key = s3s.fullSyncFixedKey()
+			//key = s3s.fullSyncFixedKey()
+			files = append(files, s3s.fullSyncFixedKey())
 		}
 	} else {
 		keyPointer, err := s3s.findNewestKey("entities")
 		if err != nil {
 			return nil, err
 		}
-		key = *keyPointer
+		//key = *keyPointer
+		files = append(files, *keyPointer)
 	}
 	go func() {
 		defer func() {
 			_ = writer.Close()
 		}()
-		readTotal, err := s3s.downloader.Download(
-			sequentialWriter{writer}, &s3.GetObjectInput{
-				Bucket: aws.String(*properties.Bucket),
-				Key:    aws.String(key),
-			},
-		)
-		s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, key)
-		if err != nil {
-			s3s.logger.Error(err)
-			_ = reader.CloseWithError(err)
+		for _, file := range files {
+			readTotal, err := s3s.downloader.Download(
+				sequentialWriter{writer}, &s3.GetObjectInput{
+					Bucket: aws.String(*properties.Bucket),
+					Key:    aws.String(file),
+				},
+			)
+			s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, file)
+			if err != nil {
+				s3s.logger.Error(err)
+				_ = reader.CloseWithError(err)
+				break
+			}
 		}
 	}()
 	return encoder.NewEntityDecoder(s3s.config, reader, "", s3s.logger, true)
