@@ -18,7 +18,7 @@ func (consoleStorage *ConsoleStorage) GetEntities() (io.Reader, error) {
 	return nil, errors.New("GetEntities not supported for ConsoleStorage")
 }
 
-func (consoleStorage *ConsoleStorage) GetChanges() (io.Reader, error) {
+func (consoleStorage *ConsoleStorage) GetChanges(since string) (io.Reader, error) {
 	return nil, errors.New("GetChanges not supported for ConsoleStorage")
 }
 

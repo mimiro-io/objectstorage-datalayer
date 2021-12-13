@@ -53,56 +53,42 @@ func (sw sequentialWriter) WriteAt(p []byte, offset int64) (n int, err error) {
 func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 	reader, writer := io.Pipe()
 	properties := s3s.config.Properties
-	var key string
+	//var key string
+	var files []string
 	if properties.ResourceName != nil {
-		key = s3s.fullSyncFixedKey()
+		if properties.CustomResourcePath != nil && *properties.CustomResourcePath {
+			//key = fmt.Sprintf("%s", *properties.ResourceName)
+			fileObjs, err := s3s.findObjects("entities")
+			if err != nil {
+				return nil, err
+			}
+			for _, f := range fileObjs {
+				files = append(files, f.FilePath)
+			}
+		} else {
+			//key = s3s.fullSyncFixedKey()
+			files = append(files, s3s.fullSyncFixedKey())
+		}
 	} else {
 		keyPointer, err := s3s.findNewestKey("entities")
 		if err != nil {
 			return nil, err
 		}
-		key = *keyPointer
+		//key = *keyPointer
+		files = append(files, *keyPointer)
 	}
 	go func() {
 		defer func() {
 			_ = writer.Close()
 		}()
-		readTotal, err := s3s.downloader.Download(
-			sequentialWriter{writer}, &s3.GetObjectInput{
-				Bucket: aws.String(*properties.Bucket),
-				Key:    aws.String(key),
-			},
-		)
-		s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, key)
-		if err != nil {
-			s3s.logger.Error(err)
-			_ = reader.CloseWithError(err)
-		}
-	}()
-	return encoder.NewEntityDecoder(s3s.config, reader, s3s.logger)
-}
-
-func (s3s *S3Storage) GetChanges() (io.Reader, error) {
-	reader, writer := io.Pipe()
-	properties := s3s.config.Properties
-
-	files, err := s3s.findObjects("changes")
-	if err != nil {
-		return nil, err
-	}
-	go func() {
-		defer func() {
-			_ = writer.Close()
-		}()
-		w := sequentialWriter{writer}
-		for _, key := range files {
+		for _, file := range files {
 			readTotal, err := s3s.downloader.Download(
-				w, &s3.GetObjectInput{
+				sequentialWriter{writer}, &s3.GetObjectInput{
 					Bucket: aws.String(*properties.Bucket),
-					Key:    aws.String(key),
+					Key:    aws.String(file),
 				},
 			)
-			s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, key)
+			s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, file)
 			if err != nil {
 				s3s.logger.Error(err)
 				_ = reader.CloseWithError(err)
@@ -110,7 +96,49 @@ func (s3s *S3Storage) GetChanges() (io.Reader, error) {
 			}
 		}
 	}()
-	return encoder.NewEntityDecoder(s3s.config, reader, s3s.logger)
+	return encoder.NewEntityDecoder(s3s.config, reader, "", s3s.logger, true)
+}
+
+func (s3s *S3Storage) GetChanges(since string) (io.Reader, error) {
+	reader, writer := io.Pipe()
+	properties := s3s.config.Properties
+
+	files, err := s3s.findObjects("changes")
+	s3s.logger.Debugf("Files found:\n%s", files)
+	if err != nil {
+		return nil, err
+	}
+	latestLastModified := ""
+	for _, file := range files {
+		if file.LastModified > latestLastModified {
+			latestLastModified = file.LastModified
+		}
+	}
+	go func() {
+		defer func() {
+			_ = writer.Close()
+		}()
+		w := sequentialWriter{writer}
+		for _, fileObj := range files {
+			s3s.logger.Debugf("Comparing since values - file lastmodified: %v , request since: %v", fileObj.LastModified, since)
+			if fileObj.LastModified > since {
+				latestLastModified = fileObj.LastModified
+				readTotal, err := s3s.downloader.Download(
+					w, &s3.GetObjectInput{
+						Bucket: aws.String(*properties.Bucket),
+						Key:    aws.String(fileObj.FilePath),
+					},
+				)
+				s3s.logger.Infof("read %v bytes total from s3 file %v", readTotal, fileObj.FilePath)
+				if err != nil {
+					s3s.logger.Error(err)
+					_ = reader.CloseWithError(err)
+					break
+				}
+			}
+		}
+	}()
+	return encoder.NewEntityDecoder(s3s.config, reader, latestLastModified, s3s.logger, false)
 }
 
 func (s3s *S3Storage) ExportSchema() error {
@@ -422,10 +450,22 @@ func (s3s *S3Storage) findNewestKey(folder string) (*string, error) {
 		"nothing found in folder %v of dataset %v", folder, s3s.config.Dataset))
 }
 
-func (s3s *S3Storage) findObjects(folder string) ([]string, error) {
+type FileObject struct {
+	SortKey      string
+	FilePath     string
+	LastModified string
+}
+
+func (s3s *S3Storage) findObjects(folder string) ([]FileObject, error) {
+	var path string
+	if s3s.config.Properties.CustomResourcePath != nil && *s3s.config.Properties.CustomResourcePath {
+		path = *s3s.config.Properties.ResourceName
+	} else {
+		path = "datasets/" + s3s.config.Dataset + "/" + folder
+	}
 	params := &s3.ListObjectsV2Input{
 		Bucket: aws.String(*s3s.config.Properties.Bucket),
-		Prefix: aws.String("datasets/" + s3s.config.Dataset + "/" + folder),
+		Prefix: aws.String(path),
 	}
 
 	resp, err := s3s.downloader.S3.ListObjectsV2(params)
@@ -433,11 +473,19 @@ func (s3s *S3Storage) findObjects(folder string) ([]string, error) {
 		return nil, err
 	}
 	result := make(map[string]string)
+	resultList := make(map[string]FileObject, 0)
 	for {
 		for _, key := range resp.Contents {
 			value := *key.Key
-			sortKey := fmt.Sprintf("%v-%v", key.LastModified.UnixNano(), value)
+			lastModified := fmt.Sprintf("%v", key.LastModified.UnixNano())
+			sortKey := fmt.Sprintf("%v-%v", lastModified, value)
 			result[sortKey] = value
+			resultList[sortKey] = FileObject{
+				FilePath:     value,
+				SortKey:      sortKey,
+				LastModified: lastModified,
+			}
+
 		}
 		if *resp.IsTruncated {
 			params.SetContinuationToken(*resp.ContinuationToken)
@@ -453,16 +501,16 @@ func (s3s *S3Storage) findObjects(folder string) ([]string, error) {
 	if len(result) > 0 {
 		//sort by key
 		keys := make([]string, 0, len(result))
-		for k := range result {
+		for k := range resultList {
 			keys = append(keys, k)
 		}
 		//sort.Sort(sort.Reverse(sort.StringSlice(keys)))
 		sort.Strings(keys)
 
-		var sortedByLastModified []string
+		var sortedByLastModified []FileObject
 		for _, k := range keys {
 			//fmt.Println(k, result[k])
-			sortedByLastModified = append(sortedByLastModified, result[k])
+			sortedByLastModified = append(sortedByLastModified, resultList[k])
 		}
 		return sortedByLastModified, nil
 	}

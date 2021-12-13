@@ -15,25 +15,21 @@ type EncodingEntityReader interface {
 	io.Reader
 }
 
-func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, logger *zap.SugaredLogger) (EncodingEntityReader, error) {
+func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, since string, logger *zap.SugaredLogger, fullSync bool) (EncodingEntityReader, error) {
 	if backend.AthenaCompatible {
 		return &NDJsonDecoder{backend: backend, reader: reader, logger: logger}, nil
+	}
+
+	if backend.FlatFileConfig != nil {
+		return &FlatFileDecoder{backend: backend, reader: reader, logger: logger, since: since, fullSync: fullSync}, nil
 	}
 
 	return nil, errors.New("this dataset has no decoder")
 }
 
-func toEntityBytes(line []byte, backend conf.StorageBackend) ([]byte, error) {
-	if !backend.StripProps {
-		return line, nil
-	}
+func toEntityBytes(line map[string]interface{}, backend conf.StorageBackend) ([]byte, error) {
 
-	var m map[string]interface{}
-	if err := json.Unmarshal(line, &m); err != nil {
-		return nil, err
-	}
-
-	id, err := extractID(backend, m)
+	id, err := extractID(backend, line)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +39,7 @@ func toEntityBytes(line []byte, backend conf.StorageBackend) ([]byte, error) {
 	newProps := map[string]interface{}{}
 	newRefs := map[string]interface{}{}
 
-	for k, v := range m {
+	for k, v := range line {
 		if isRef(backend, k) {
 			withPrefix(newRefs, backend, k, v)
 		} else {
@@ -77,9 +73,12 @@ func isRef(backend conf.StorageBackend, k string) bool {
 
 func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string, v interface{}) string {
 	if backend.DecodeConfig != nil {
-		if prefixConfig, ok := backend.DecodeConfig.PropertyPrefixes[k]; ok {
+		prefixConfig, exist := backend.DecodeConfig.PropertyPrefixes[k]
+		if exist {
 			keyPrefix, valuePrefix := prefixValues(prefixConfig)
 			m[fmt.Sprintf("%v", wrap(k, keyPrefix))] = wrap(v, valuePrefix)
+		} else {
+			m[fmt.Sprintf("%v", wrap(k, backend.DecodeConfig.DefaultNamespace))] = v
 		}
 	}
 

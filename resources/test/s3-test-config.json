@@ -111,6 +111,40 @@
                 "key": "AccessKeyId",
                 "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
             }
+        },
+        {
+            "dataset": "s3-flatfile",
+            "storageType": "S3",
+            "storeDeleted": false,
+            "props": {
+                "bucket": "s3-test-bucket",
+                "resourceName": "",
+                "customResourcePath": true,
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            },
+            "flatFile": {
+                "fields": {
+                    "foo": {
+                        "substring":[[0,2]]
+                    },
+                    "bar": {
+                        "substring":[[2,5]],
+                        "type":"integer"
+                    }
+                }
+            },
+            "decode": {
+                "defaultNamespace":"_",
+                "namespaces": {
+                    "_":"http://example.io/foo/"
+                },
+                "propertyPrefixes":{},
+                "refs":[],
+                "idProperty":"foo"
+            }
         }
     ]
 }

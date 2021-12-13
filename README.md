@@ -183,16 +183,42 @@ Depending on storage type and security requirements the configuration of each da
         "secret": "string"
     },
     "decode": {
+        "defaultNamespace": "_",
         "namespaces": {
-            "string": "string"
+            "_": "http://example.io/foo/bar/",
+            "thing": "http://example.io/other/thing/"
         },
         "propertyPrefixes": {
-            "string": "string"
+            "field2": "_:thing"
         },
-        "idProperty": "string",
+        "idProperty": "field1",
         "refs": [
-            "string"
+            "field2"
         ]
+    },
+    "flatFile": {
+        "fields": {
+            "birthdate": {
+                "substring": [[0,8]]
+            },
+            "phone": {
+                "substring": [[8,17]]
+            },
+            "startDate": {
+                "substring":  [[17, 25]],
+                "type": "date",
+                "dateLayout": "20060102"
+            },
+            "zip": {
+                "substring": [[25, 29]],
+                "type": "integer"
+            },
+            "score": {
+                "substring": [[29, 32]],
+                "type": "float",
+                "decimals": 2
+            }
+        }
     }
 }
 ```
@@ -217,6 +243,7 @@ property name | description
 `props.region` | cloud provider region
 `props.authType`| Can be "SAS" for azure, otherwise ignored.
 `props.resourceName` | static filename for fullsyncs. If given, the layer will always write fullsyncs as single file to this object. If empty, the layer will generate new filenames each time.
+`props.customResourcePath` | Set to `true` to use the value from `props.resourceName` as the full path to relevant directory
 `props.rootFolder` | only supported in azure. can be used to override object folder name. default is dataset name
 `props.filePrefix` | only supported in azure. default is that there is no prefix.
 `props.endpoint` | only needed in azure to declare storage service endpoint url. Can also be used to point s3 datasets to alternative s3 providers like ceph or localstack.
@@ -227,6 +254,12 @@ property name | description
 `decode.propertyPrefixes` | mapping of object keys to prefixes. each key in a flat data structure that is found in this map will be prefixed. A prefix value can have one of these three formats:<br/> * `prefixA` : the property key is prefixed with `prefixA`. example: `{"name": "bob"}` becomes `{"prefixA:name": "bob"}` <br/>* `prefixA:prefixB` : denotes different prefixes for key and value - separated by colon. example: `{"name": "bob"}` becomes `{"prefixA:name": "prefixB:bob"}` <br/>* `:prefixA` : only the value is prefixed with `prefixA`. example: `{"name": "bob"}` becomes `{"name": "prefixA:bob"}`. __caution__: to produce valid UDA documents all property keys must be prefixed. To support unprefixed keys you must declare a default namespace with prefix `_` in the document context.
 `decode.idProperty` | UDA entities require an `id` field. This field declares which object key to fetch the id value from. value prefixes from correlating `propertyPrefix` settings are also applied to the id value.
 `decode.refs` | list of object keys that should be placed into refs instead of props. prefixes from propertiesPrefixes are still applied.
+`decode.defaultNamespace` | One of the defined namespaces under `decode.namespaces`. Will be used for all properties not specified under `decode.propertyPrefixes.
+`flatFile.fields` | Map of field configs. The key will be the property name in the output entity.
+`flatFile.fields.substring` | A two-dimensional array to declare string indices to use in substring. i.e. [[0,5]]
+`flatFile.fields.type` | Declare type of the parsed field. Available types are string,int,float,date. Default: string.
+`flatFile.fields.decimals` | Can be used to declare how many decimals in a parsed float.
+`flatFile.fields.dateLayout` | Must be present for parsing date. Declare with standard go date format layout.
 
 #### Encoders.
 
@@ -237,6 +270,10 @@ property name | description
 * by providing a `csv` object in a dataset configuration, the csv encoder is enabled. Csv files require a column declaration in `csv.order`
 
 * by providing a `parquet` object in a dataset configuration, files are encoded as parquet files. Parquet encoding requires a parquet schema to describe the columns and data types of the target files.
+
+* by providing a `flatFile` configuration, the flatFile encoder will be enabled.
+
+If more than one of the mentioned encoders are configured (*not recommended*), it will choose the first in line.
 
 ##### parquet schemas
 
@@ -262,10 +299,14 @@ must be provided like this:
 
 #### Decoders
 
-Currently there is only support for decoding ndjson (athena) formatted s3 files.
+Currently there is support for decoding ndjson (athena) formatted s3 files and fixed width flat files.
+
+If more than one decoder is configured (*not recommended*), it will choose the first in line. (ndjson)
+
+##### Ndjson
 
 For s3 files that contain complete, valid UDA entities in ndjson format, set `stripProps=false`
-In the dataset configuration. This will cause the decoder to simple concatenate all lines (entities) to a valid json array with leading @context entity.
+In the dataset configuration. This will cause the decoder to simply concatenate all lines (entities) to a valid json array with leading @context entity.
 
 for other flat json objects, you can set `stripProps=true` and provide a `decode` block in the dataset configuration. An example:
 
@@ -307,6 +348,72 @@ with this `decode` configuration:
     }
 }
 ```
+
+##### Fixed Width Flat file
+
+We support parsing fixed width flat files where each line represents an entity and must be separated by using substring:
+```
+01021990987654321
+25051985987432165
+```
+To parse this, we need a `flatFile` config in the storageBackends dataset entry:
+```json
+{
+    "flatFile": {
+        "fields": {
+            "birthdate": {
+                "substring": [[0,8]]
+            },
+            "phone": {
+                "substring": [[8,17]]
+            }
+        }
+    }
+}
+```
+
+If you wish to combine multiple substrings into one property, this can be achieved by this notation:
+```
+"substring": [[0,4],[6,8]]
+```
+
+See full example including decode config:
+```json
+{
+    "dataset": "foo",
+    "storageType": "S3",
+    "flatFile": {
+        "fields": {
+            "birthdate": {
+                "substring": [[0,8]]
+            },
+            "phone": {
+                "substring": [[8,17]]
+            }
+        }
+    },
+    "decode": {
+        "defaultNamespace": "_",
+        "namespaces": {
+            "_": "http://example.io/bar/foo/"
+        },
+        "propertyPrefixes": {},
+        "refs": [],
+        "idProperty": "phone"
+    },
+    "props": {
+        "bucket": "ftp",
+        "resourceName": "my/path",
+        "customResourcePath": true,
+        "endpoint": "http://localhost:4566",
+        "region": "eu-west-1",
+        "key": "AccessKeyId",
+        "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+    }
+}
+```
+
+
 ### Example
 
 A complete example can be found under "resources/test/test-config.json"
@@ -386,6 +493,52 @@ A complete example can be found under "resources/test/test-config.json"
                 "rootFolder": "",
                 "key": "myaccount1",
                 "secret": ""
+            }
+        },
+        {
+            "dataset": "example.foo",
+            "storageType": "S3",
+            "flatFile": {
+                "fields": {
+                    "birthdate": {
+                        "substring": [[0,8]]
+                    },
+                    "phone": {
+                        "substring": [[8,17]]
+                    },
+                    "startDate": {
+                        "substring":  [[17, 25]],
+                        "type": "date",
+                        "dateLayout": "20060102"
+                    },
+                    "zip": {
+                        "substring": [[25, 29]],
+                        "type": "integer"
+                    },
+                    "score": {
+                        "substring": [[29, 32]],
+                        "type": "float",
+                        "decimals": 2
+                    }
+                }
+            },
+            "decode": {
+                "defaultNamespace": "_",
+                "namespaces": {
+                    "_": "http://example.io/bar/foo/"
+                },
+                "propertyPrefixes": {},
+                "refs": [],
+                "idProperty": "phone"
+            },
+            "props": {
+                "bucket": "ftp",
+                "resourceName": "my/path",
+                "customResourcePath": true,
+                "endpoint": "http://localhost:4566",
+                "region": "eu-west-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
             }
         }
     ]

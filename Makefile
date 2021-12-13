@@ -22,3 +22,7 @@ testlocal:
 
 integration:
 	go test ./... -v -tags=integration
+
+docker-test-integration:
+	docker build --target builder . -t objectstorage-layer-build
+	docker run -v /var/run/docker.sock:/var/run/docker.sock --net=host objectstorage-layer-build go test ./... -v -tags=integration
