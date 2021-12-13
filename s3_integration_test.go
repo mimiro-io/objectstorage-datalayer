@@ -128,6 +128,7 @@ func TestS3(t *testing.T) {
 			g.Assert(err).IsNil()
 			//payload has 3 entities
 			// ?batchSize=2 coerces the entity parser to load with batchSize 2.
+			time.Sleep(1 * time.Second)
 			req, _ := http.NewRequest("POST", layerUrl+"/s3-athena/entities?batchSize=1", strings.NewReader(string(fileBytes)))
 			req.Header.Add("universal-data-api-full-sync-start", "true")
 			req.Header.Add("universal-data-api-full-sync-id", "42")
