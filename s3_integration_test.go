@@ -9,6 +9,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -609,6 +610,79 @@ func TestS3(t *testing.T) {
 			g.Assert(entities[3]["refs"]).Eql(map[string]interface{}{"b:address": "b:2"})
 			g.Assert(entities[3]["props"]).Eql(map[string]interface{}{
 				"a:age": 67, "a:firstname": "Dan", "a:surname": "TheMan", "a:vaccinated": true, "id": "a:3"})
+		})
+		g.It("Should return changes from a s3 flatfile incremental (multi file) dataset", func() {
+			g.Timeout(10 * time.Second)
+			uploader := s3manager.NewUploaderWithClient(s3Service)
+
+			// upload a flatfile to s3
+			fileBytes, _ := ioutil.ReadFile("./resources/test/data/flatfile-changes-1.txt")
+			_, err := uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String("s3-test-bucket"),
+				Key:    aws.String("s3-flatfile/1.txt"),
+				Body:   bytes.NewReader(fileBytes),
+			})
+			g.Assert(err).IsNil()
+
+			// read flatfile as json entities
+			resp, err := http.Get(layerUrl + "/s3-flatfile/changes")
+			g.Assert(err).IsNil()
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			var entities []map[string]interface{}
+			err = json.Unmarshal(bodyBytes, &entities)
+			g.Assert(err).IsNil()
+			g.Assert(len(entities)).Eql(5, "context, continuation and 3 changes")
+			var continuationToken string
+			for _, entity := range entities {
+				if entity["id"] == "@continuation" {
+					continuationToken = entity["token"].(string)
+				}
+			}
+
+			// upload another flatfile to s3
+			time.Sleep(1 * time.Second) //need 1 second to get different aws timestamps
+			fileBytes, _ = ioutil.ReadFile("./resources/test/data/flatfile-changes-2.txt")
+			_, err = uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String("s3-test-bucket"),
+				Key:    aws.String("s3-flatfile/2.txt"),
+				Body:   bytes.NewReader(fileBytes),
+			})
+			g.Assert(err).IsNil()
+
+			// read flatfile as json entities
+			resp2, err := http.Get(fmt.Sprintf("%s/s3-flatfile/changes?since=%s", layerUrl, continuationToken))
+			g.Assert(err).IsNil()
+			bodyBytes2, _ := io.ReadAll(resp2.Body)
+			var entities2 []map[string]interface{}
+			err = json.Unmarshal(bodyBytes2, &entities2)
+			g.Assert(err).IsNil()
+			g.Assert(len(entities2)).Eql(5, "context, continuation and 3 changes")
+
+			for _, entity := range entities2 {
+				if entity["id"] == "@continuation" {
+					continuationToken = entity["token"].(string)
+				}
+			}
+
+			// upload another flatfile to s3
+			time.Sleep(1 * time.Second) //need 1 second to get different aws timestamps
+			fileBytes, _ = ioutil.ReadFile("./resources/test/data/flatfile-changes-3.txt")
+			_, err = uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String("s3-test-bucket"),
+				Key:    aws.String("s3-flatfile/3.txt"),
+				Body:   bytes.NewReader(fileBytes),
+			})
+			g.Assert(err).IsNil()
+
+			// read flatfile as json entities
+			resp3, err := http.Get(fmt.Sprintf("%s/s3-flatfile/changes?since=%s", layerUrl, continuationToken))
+			g.Assert(err).IsNil()
+			bodyBytes3, _ := io.ReadAll(resp3.Body)
+			var entities3 []map[string]interface{}
+			err = json.Unmarshal(bodyBytes3, &entities3)
+			g.Assert(err).IsNil()
+			g.Assert(len(entities3)).Eql(5, "context, continuation and 3 changes")
+
 		})
 	})
 }
