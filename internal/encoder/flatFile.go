@@ -188,8 +188,8 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 		var entityProps map[string]interface{}
 		entityProps, err = d.ParseLine(line, d.backend.FlatFileConfig)
 		if err != nil {
+			d.logger.Errorf("Failed to parse line: '%s'", line)
 			if d.backend.FlatFileConfig.ContinueOnParseError {
-				d.logger.Warnf("Failed to parse line: '%s'", line)
 				continue
 			} else {
 				return
