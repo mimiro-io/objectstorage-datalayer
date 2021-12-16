@@ -254,12 +254,13 @@ property name | description
 `decode.propertyPrefixes` | mapping of object keys to prefixes. each key in a flat data structure that is found in this map will be prefixed. A prefix value can have one of these three formats:<br/> * `prefixA` : the property key is prefixed with `prefixA`. example: `{"name": "bob"}` becomes `{"prefixA:name": "bob"}` <br/>* `prefixA:prefixB` : denotes different prefixes for key and value - separated by colon. example: `{"name": "bob"}` becomes `{"prefixA:name": "prefixB:bob"}` <br/>* `:prefixA` : only the value is prefixed with `prefixA`. example: `{"name": "bob"}` becomes `{"name": "prefixA:bob"}`. __caution__: to produce valid UDA documents all property keys must be prefixed. To support unprefixed keys you must declare a default namespace with prefix `_` in the document context.
 `decode.idProperty` | UDA entities require an `id` field. This field declares which object key to fetch the id value from. value prefixes from correlating `propertyPrefix` settings are also applied to the id value.
 `decode.refs` | list of object keys that should be placed into refs instead of props. prefixes from propertiesPrefixes are still applied.
-`decode.defaultNamespace` | One of the defined namespaces under `decode.namespaces`. Will be used for all properties not specified under `decode.propertyPrefixes.
+`decode.defaultNamespace` | One of the defined namespaces under `decode.namespaces`. Will be used for all properties not specified under `decode.propertyPrefixes`.
 `flatFile.fields` | Map of field configs. The key will be the property name in the output entity.
 `flatFile.fields.substring` | A two-dimensional array to declare string indices to use in substring. i.e. [[0,5]]
 `flatFile.fields.type` | Declare type of the parsed field. Available types are string,int,float,date. Default: string.
 `flatFile.fields.decimals` | Can be used to declare how many decimals in a parsed float.
 `flatFile.fields.dateLayout` | Must be present for parsing date. Declare with standard go date format layout.
+`flatFile.continueOnParseError` | If set to true, the line parser will log a warning and continue to parse the rest of the file on error. Default: false
 
 #### Encoders.
 
