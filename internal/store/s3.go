@@ -242,11 +242,24 @@ func (s3s *S3Storage) StoreEntities(entities []*entity.Entity) error {
 
 	key := s3s.createKey(entities, false)
 	properties := s3s.config.Properties
-	result, err := s3s.uploader.Upload(&s3manager.UploadInput{
-		Body:   bytes.NewReader(content),
-		Bucket: aws.String(*properties.Bucket),
-		Key:    aws.String(key),
-	})
+
+	var uploadInput *s3manager.UploadInput
+	if s3s.config.FlatFileConfig != nil {
+		uploadInput = &s3manager.UploadInput{
+			Body:        bytes.NewReader(content),
+			Bucket:      aws.String(*properties.Bucket),
+			Key:         aws.String(key),
+			ContentType: aws.String("text/plain; charset=utf-8"),
+		}
+	} else {
+		uploadInput = &s3manager.UploadInput{
+			Body:   bytes.NewReader(content),
+			Bucket: aws.String(*properties.Bucket),
+			Key:    aws.String(key),
+		}
+	}
+
+	result, err := s3s.uploader.Upload(uploadInput)
 	if err != nil {
 		s3s.logger.Error("Failed to upload ", err)
 		return err
@@ -344,11 +357,22 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 		}
 
 		go func() {
-			result, err := s3s.uploader.UploadWithContext(ctx, &s3manager.UploadInput{
-				Body:   s3s.reader,
-				Bucket: aws.String(*properties.Bucket),
-				Key:    aws.String(key),
-			})
+			var uploadInput *s3manager.UploadInput
+			if s3s.config.FlatFileConfig != nil {
+				uploadInput = &s3manager.UploadInput{
+					Body:        s3s.reader,
+					Bucket:      aws.String(*properties.Bucket),
+					Key:         aws.String(key),
+					ContentType: aws.String("text/plain; charset=utf-8"),
+				}
+			} else {
+				uploadInput = &s3manager.UploadInput{
+					Body:   s3s.reader,
+					Bucket: aws.String(*properties.Bucket),
+					Key:    aws.String(key),
+				}
+			}
+			result, err := s3s.uploader.UploadWithContext(ctx, uploadInput)
 			s3s.waitGroup.Done()
 			if err != nil {
 				s3s.logger.Error("Failed to upload ", err)
