@@ -273,6 +273,9 @@ func (s3s *S3Storage) createKey(entities []*entity.Entity, fullSync bool) string
 	if s3s.config.CsvConfig != nil {
 		ending = "csv"
 	}
+	if s3s.config.FlatFileConfig != nil {
+		ending = "txt"
+	}
 	if s3s.config.ParquetConfig != nil {
 		ending = "parquet"
 		if !fullSync {
@@ -325,7 +328,11 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 		if properties.ResourceName == nil {
 			key = s3s.createKey(entities, true)
 		} else {
-			key = s3s.fullSyncFixedKey()
+			if properties.CustomResourcePath != nil {
+				key = *properties.ResourceName
+			} else {
+				key = s3s.fullSyncFixedKey()
+			}
 		}
 
 		if s3s.env.Env == "local" {
