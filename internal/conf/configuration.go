@@ -32,6 +32,7 @@ type PropertiesMapping struct {
 	ResourceName       *string `json:"resourceName,omitempty"`
 	CustomResourcePath *bool   `json:"customResourcePath,omitempty"`
 	RootFolder         *string `json:"rootFolder,omitempty"`
+	FolderStructure    *string `json:"folderStructure,omitempty"`
 	FilePrefix         *string `json:"filePrefix,omitempty"`
 	Endpoint           string  `json:"endpoint"`
 	Key                *string `json:"key,omitempty"`

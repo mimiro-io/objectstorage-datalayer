@@ -116,15 +116,18 @@ func (conf *ConfigurationManager) load() {
 }
 
 func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageConfig {
+	updatedStorageBackend := []StorageBackend{}
 	for _, mapping := range config.StorageBackends {
 		secretFromProperties := mapping.Properties.Secret
 		if secretFromProperties != nil && *secretFromProperties != "" {
-			secretFromEnviorment := viper.GetString(*secretFromProperties)
-			if secretFromEnviorment != "" {
-				mapping.Properties.Secret = &secretFromEnviorment
+			secretFromEnvironment := viper.GetString(*secretFromProperties)
+			if secretFromEnvironment != "" {
+				mapping.Properties.Secret = &secretFromEnvironment
 			}
 		}
+		updatedStorageBackend = append(updatedStorageBackend, mapping)
 	}
+	config.StorageBackends = updatedStorageBackend
 	return config
 }
 
