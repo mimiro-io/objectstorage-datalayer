@@ -246,6 +246,7 @@ property name | description
 `props.customResourcePath` | Set to `true` to use the value from `props.resourceName` as the full path to relevant directory
 `props.rootFolder` | only supported in azure. can be used to override object folder name. default is dataset name
 `props.filePrefix` | only supported in azure. default is that there is no prefix.
+`props.folderStructure` | only supported in azure. set to `dated`  if you want folderstructure in the form of `yyyy/mm/dd/filename`. default is flat structure in root .
 `props.endpoint` | only needed in azure to declare storage service endpoint url. Can also be used to point s3 datasets to alternative s3 providers like ceph or localstack.
 `props.key` |  access key id for the credentials provider of the dataset's storage backend
 `props.secret` | name of environment variable that contains the auth secret string

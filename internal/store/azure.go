@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -137,8 +138,6 @@ func (azStorage *AzureStorage) createURL(entities []*entity.Entity) (*url.URL, e
 		rootFolder = azStorage.dataset
 	}
 
-	year, month, day := time.Now().Date()
-
 	prefix := ""
 	if config.FilePrefix != nil && *config.FilePrefix != "" {
 		prefix = *config.FilePrefix
@@ -148,8 +147,23 @@ func (azStorage *AzureStorage) createURL(entities []*entity.Entity) (*url.URL, e
 		prefix = prefix + entities[0].Recorded + "-"
 	}
 
-	filename := fmt.Sprintf("%s%s.json", prefix, uuid.New().String())
-	blobname := fmt.Sprintf("%s/%s/%d/%d/%d/%s", azStorage.env.Env, rootFolder, year, int(month), day, filename)
+	ending := "json"
+	if azStorage.config.CsvConfig != nil {
+		ending = "csv"
+	}
+	if azStorage.config.FlatFileConfig != nil {
+		ending = "txt"
+	}
+	if azStorage.config.ParquetConfig != nil {
+		ending = "parquet"
+	}
+
+	filename := fmt.Sprintf("%s%s.%s", prefix, uuid.New().String(), ending)
+	blobname := fmt.Sprintf("%s/%s", rootFolder, filename)
+	if config.FolderStructure != nil && strings.ToLower(*config.FolderStructure) == "dated" {
+		year, month, day := time.Now().Date()
+		blobname = fmt.Sprintf("%s/%d/%d/%d/%s", rootFolder, year, int(month), day, filename)
+	}
 	urlString := fmt.Sprintf("%s/%s/%s", config.Endpoint, *config.ResourceName, blobname)
 	if config.AuthType != nil && *config.AuthType == "SAS" {
 		urlString = fmt.Sprintf("%s?%s", urlString, *config.Secret)

@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package main
@@ -32,7 +33,8 @@ func TestAzure(t *testing.T) {
 	g := goblin.Goblin(t)
 	var fxApp *fx.App
 	layerUrl := "http://localhost:19898/datasets"
-	var containerURL azblob.ContainerURL
+	var plainContainerURL azblob.ContainerURL
+	var parquetContainerURL azblob.ContainerURL
 
 	g.Describe("The azure storage", func() {
 		var endpoint string
@@ -88,12 +90,11 @@ func TestAzure(t *testing.T) {
 			// Create an ServiceURL object that wraps the service URL and a request pipeline.
 			serviceURL := azblob.NewServiceURL(*u, azblob.NewPipeline(cred, azblob.PipelineOptions{}))
 			//ctx := context.Background()
-			containerURL = serviceURL.NewContainerURL("local")
+			plainContainerURL = serviceURL.NewContainerURL("azure-plain")
+			parquetContainerURL = serviceURL.NewContainerURL("azure-parquet")
 			// Create the container on the service (with no metadata and public access)
-			_, err := containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
-			if err != nil {
-				// t.Error(err)
-			}
+			plainContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
+			parquetContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
 		})
 		g.After(func() {
 			if azureContainer != nil {
@@ -109,8 +110,10 @@ func TestAzure(t *testing.T) {
 				fxApp.Stop(ctx)
 			}
 			//reset azure container
-			_, _ = containerURL.Delete(ctx, azblob.ContainerAccessConditions{})
-			_, _ = containerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
+			_, _ = plainContainerURL.Delete(ctx, azblob.ContainerAccessConditions{})
+			_, _ = plainContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
+			_, _ = parquetContainerURL.Delete(ctx, azblob.ContainerAccessConditions{})
+			_, _ = parquetContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
 
 			stdErr := os.Stderr
 			stdOut := os.Stdout
@@ -155,9 +158,9 @@ func TestAzure(t *testing.T) {
 				"application/json", strings.NewReader(string(fileBytes)))
 			g.Assert(err).IsNil()
 			g.Assert(res.StatusCode).Eql(200)
-			items := GetBlobItems(containerURL, "")
+			items := GetBlobItems(plainContainerURL, "")
 			g.Assert(len(items)).Eql(1)
-			content := ReadBlobContents(containerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
+			content := ReadBlobContents(plainContainerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
 
 			var entities []map[string]interface{}
 			_ = json.Unmarshal(content, &entities)
@@ -181,10 +184,10 @@ func TestAzure(t *testing.T) {
 			g.Assert(err).IsNil()
 			g.Assert(res.StatusCode).Eql(200)
 
-			items := GetBlobItems(containerURL, "")
+			items := GetBlobItems(parquetContainerURL, "")
 			g.Assert(len(items)).Eql(2)
 
-			content := ReadBlobContents(containerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
+			content := ReadBlobContents(parquetContainerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(content), "id", "firstname")
 			g.Assert(err).IsNil()
 
