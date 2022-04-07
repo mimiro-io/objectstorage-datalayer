@@ -23,7 +23,9 @@ func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, since 
 	if backend.FlatFileConfig != nil {
 		return &FlatFileDecoder{backend: backend, reader: reader, logger: logger, since: since, fullSync: fullSync}, nil
 	}
-
+	if backend.CsvConfig != nil {
+		return &CsvDecoder{backend: backend, reader: reader, logger: logger, since: since, fullSync: fullSync}, nil
+	}
 	return nil, errors.New("this dataset has no decoder")
 }
 

@@ -1,0 +1,49 @@
+{
+    "id": "test-localfile",
+    "storageBackends": [
+        {
+            "dataset": "s3-csv-mapping",
+            "storageType": "S3",
+            "storeDeleted": false,
+            "stripProps": false,
+            "csv": {
+                "header": true,
+                "encoding": "UTF-8",
+                "separator": ",",
+                "order": [
+                    "id",
+                    "firstname",
+                    "surname",
+                    "age",
+                    "vaccinated"
+                ]
+            },
+            "props": {
+                "bucket": "s3-test-bucket",
+                "resourceName": "test.csv",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        },
+        {
+            "dataset": "s3-parquet-mapping",
+            "storageType": "S3",
+            "storeDeleted": false,
+            "stripProps": true,
+            "parquet": {
+                "flushThreshold": 20,
+                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING); }"
+            },
+            "props": {
+                "bucket": "s3-test-bucket",
+                "resourceName": "test.parquet",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
+        }
+    ]
+}
