@@ -162,7 +162,7 @@ func (ls *LocalStorage) GetEntities() (io.Reader, error) {
 	properties := ls.config.LocalFileConfig
 	if properties.RootFolder != "" {
 		//key = fmt.Sprintf("%s", *properties.ResourceName)
-		fmt.Sprintf("Working on folder: %s", properties.RootFolder)
+		ls.logger.Info("Working on folder: " + properties.RootFolder)
 	} else {
 		ls.logger.Error("No folder specified, exiting")
 		os.Exit(1)
@@ -173,28 +173,41 @@ func (ls *LocalStorage) GetEntities() (io.Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, file := range files {
-		if !strings.HasSuffix(file.FilePath, ls.config.LocalFileConfig.FileSuffix) {
-			continue
-		}
-	}
-
 	go func() {
 		defer func() {
 			_ = writer.Close()
 		}()
 		for _, fileObj := range files {
-			file, err := os.Open(fileObj.FilePath)
-			defer file.Close()
-			//choose a chunk size
-			io.TeeReader(file, writer)
+			if !strings.HasSuffix(fileObj.FilePath, ls.config.LocalFileConfig.FileSuffix) {
+				continue
+			}
 
-			ls.logger.Infof("read bytes from local file %v", fileObj.FilePath)
+			//file, err := os.OpenFile(fileObj.FilePath)
+			file, err := os.Open(fileObj.FilePath)
+
+			if err != nil {
+				_ = reader.CloseWithError(err)
+			}
+			buf := make([]byte, 512)
+			for {
+				n, err := file.Read(buf)
+				if err == io.EOF {
+					break
+				}
+				if err != nil {
+					fmt.Println(err)
+					continue
+				}
+				if n > 0 {
+					writer.Write(buf[:n])
+				}
+			}
+			ls.logger.Infof("read bytes from local file %s", fileObj.FilePath)
 			if err != nil {
 				ls.logger.Error(err)
-				_ = reader.CloseWithError(err)
 				break
 			}
+
 		}
 	}()
 	return encoder.NewEntityDecoder(ls.config, reader, "", ls.logger, true)
@@ -226,6 +239,7 @@ func (ls *LocalStorage) GetChanges(since string) (io.Reader, error) {
 			}
 		}
 	}
+
 	go func() {
 		defer func() {
 			_ = writer.Close()
@@ -265,6 +279,7 @@ func (ls *LocalStorage) findObjects(folder string) ([]FileInfo, error) {
 	var err error
 	result := GetAllFiles(path)
 	if err != nil {
+		ls.logger.Info("could not find any files at" + path)
 		return nil, err
 	}
 	return result, err

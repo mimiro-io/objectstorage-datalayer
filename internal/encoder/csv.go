@@ -3,7 +3,6 @@ package encoder
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
@@ -116,89 +115,150 @@ func (enc *CsvEncoder) encode(entities []*entity.Entity) (int, error) {
 // CsvFileDecoder ********************** DECODER ****************************************/
 
 type CsvDecoder struct {
-	backend  conf.StorageBackend
-	reader   *io.PipeReader
-	logger   *zap.SugaredLogger
-	open     bool
-	closed   bool
-	since    string
-	fullSync bool
+	backend    conf.StorageBackend
+	reader     *io.PipeReader
+	logger     *zap.SugaredLogger
+	csvreader  *csv.Reader
+	headerline []string
+	open       bool
+	closed     bool
+	since      string
+	overhang   []byte
+	fullSync   bool
+}
+
+func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
+	buf := make([]byte, 0, len(p))
+	var done bool
+	if len(dec.overhang) > 0 {
+		buf = append(buf, dec.overhang...)
+		dec.overhang = nil
+	}
+	if !dec.open {
+		dec.open = true
+		dec.csvreader = csv.NewReader(dec.reader)
+		buf = append(buf, []byte("[")...)
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+		buf = append(buf, []byte(buildContext(dec.backend.DecodeConfig.Namespaces))...)
+		config := dec.backend.CsvConfig // we come here, this should never be nil
+		//csvreader := csv.NewReader(dec.reader)
+		if config.Separator != "" {
+			dec.csvreader.Comma = rune(config.Separator[0])
+		}
+		dec.csvreader.FieldsPerRecord = -1
+		dec.skipRows()
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+	}
+
+	var headerLine []string
+	var record []string
+
+	if dec.headerline == nil {
+		headerLine, err = dec.csvreader.Read()
+		if err == nil {
+			dec.headerline = headerLine
+		}
+	}
+
+	//streaming doesnt work with ReadAll()
+	// append one entity per line, comma separated
+	for {
+		record, err = dec.csvreader.Read()
+
+		if err != nil || len(record) == 0 {
+			break
+		}
+		if len(record) < len(dec.headerline) {
+			dec.skipRows()
+			continue
+		}
+
+		var entityProps = make(map[string]interface{})
+		entityProps, err = dec.parseRecord(record, dec.headerline)
+		if err != nil {
+			return
+		}
+		var entityBytes []byte
+		entityBytes, err = toEntityBytes(entityProps, dec.backend)
+		if err != nil {
+			return
+		}
+		buf = append(buf, append([]byte(","), entityBytes...)...)
+
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+
+	}
+
+	// close json array
+	var sinceBytes []byte
+	if !dec.closed {
+		var token string
+		if dec.fullSync {
+			token = ""
+		} else {
+			token = dec.since
+		}
+		// Add continuation token
+		entity := map[string]interface{}{
+			"id":    "@continuation",
+			"token": token,
+		}
+		sinceBytes, err = json.Marshal(entity)
+		if err != nil {
+			panic(err)
+		}
+		buf = append(buf, append([]byte(","), sinceBytes...)...)
+		buf = append(buf, []byte("]")...)
+		dec.closed = true
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+	}
+	n = copy(p, buf)
+
+	return n, io.EOF
+}
+func (dec *CsvDecoder) skipRows() {
+	skip := 0
+	for skip < dec.backend.CsvConfig.SkipRows {
+		_, err := dec.csvreader.Read()
+		if err != nil {
+			panic(err)
+		}
+		skip++
+	}
+}
+func (dec *CsvDecoder) stringSlicesEqual(record []string) bool {
+	if len(record) != len(dec.headerline) {
+		return false
+	}
+	for i, v := range record {
+		if v != dec.headerline[i] {
+			return false
+		}
+	}
+	return true
+}
+func (dec *CsvDecoder) flush(p []byte, buf []byte) (int, error, bool) {
+	// p grows unexpectedly so 512 is set as hard byte cap.
+	if len(buf) >= 512 {
+		n := copy(p, buf)
+		dec.overhang = buf[n:]
+		return n, nil, true
+	}
+	return 0, nil, false
 }
 
 func (dec *CsvDecoder) Close() error {
 	return dec.Close()
 }
 
-func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
-	buf := make([]byte, 0, len(p))
-
-	if !dec.open {
-		dec.open = true
-		buf = append(buf, []byte("[")...)
-		buf = append(buf, []byte(buildContext(dec.backend.DecodeConfig.Namespaces))...)
-		if err != nil {
-			return
-		}
-	}
-	config := dec.backend.CsvConfig // we come here, this should never be nil
-	reader := csv.NewReader(dec.reader)
-	if config.Separator != "" {
-		reader.Comma = rune(config.Separator[0])
-	}
-	reader.FieldsPerRecord = -1
-
-	skip := 0
-	for skip < dec.backend.CsvConfig.SkipRows {
-		var skipRec []string
-		if _, err := reader.Read(); err != nil {
-			panic(err)
-		}
-		fmt.Sprintf("skipped rec %s", skipRec)
-		skip++
-	}
-	headerLine, err := reader.Read()
-	records, err := reader.ReadAll()
-	if err != nil {
-		panic(err)
-	}
-	// append one entity per line, comma separated
-	buf = append(buf, []byte("[")...)
-	buf = append(buf, []byte(buildContext(dec.backend.DecodeConfig.Namespaces))...)
-	for _, record := range records {
-		var entityProps = make(map[string]interface{})
-		entityProps, err := dec.parseRecord(record, headerLine)
-		if err != nil {
-			panic(err)
-		}
-		var entityBytes []byte
-		entityBytes, err = toEntityBytes(entityProps, dec.backend)
-		if err != nil {
-			panic(err)
-		}
-		buf = append(buf, append([]byte(","), entityBytes...)...)
-	}
-	var token string
-	if dec.fullSync {
-		token = ""
-	} else {
-		token = dec.since
-	}
-	// Add continuation token
-	entity := map[string]interface{}{
-		"id":    "@continuation",
-		"token": token,
-	}
-	sinceBytes, err := json.Marshal(entity)
-	buf = append(buf, append([]byte(","), sinceBytes...)...)
-
-	// close json array
-	if !dec.closed {
-		buf = append(buf, []byte("]")...)
-		dec.closed = true
-	}
-	n = copy(p, buf)
-	return n, io.EOF
-}
 func (dec *CsvDecoder) parseRecord(data []string, header []string) (map[string]interface{}, error) {
 	// convert csv lines to array of structs
 	var entityProps = make(map[string]interface{}, 0)
