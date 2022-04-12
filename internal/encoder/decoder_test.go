@@ -1,10 +1,13 @@
 package encoder
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"github.com/franela/goblin"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -83,6 +86,78 @@ func TestDecodeLine(t *testing.T) {
 			var resultMap map[string]interface{}
 			json.Unmarshal(result, &resultMap)
 			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+	})
+	g.Describe("The csv Decoder", func() {
+		g.It("Should produce json entity from csv input", func() {
+			reader, _ := io.Pipe()
+			result := make([]byte, 0)
+			backend := conf.StorageBackend{CsvConfig: &conf.CsvConfig{
+				Header:         true,
+				Encoding:       "UTF-8",
+				Separator:      ",",
+				Order:          []string{"id", "key"},
+				SkipRows:       2,
+				ValidateFields: false,
+			}}
+			decoder := &CsvDecoder{backend: backend, reader: reader, logger: nil, since: ""}
+			//var input []string
+			data := "1\n2\nID,Type,Name,Date,Thing\n991234,1,Tester,,Yes\n88456,abc,Fester,,asd\n"
+
+			csvRead := csv.NewReader(strings.NewReader(data))
+			if !backend.CsvConfig.ValidateFields {
+				csvRead.FieldsPerRecord = -1
+			}
+
+			csvRead.Comma = rune(backend.CsvConfig.Separator[0])
+			skip := 0
+			for skip < backend.CsvConfig.SkipRows {
+				var skipRec []string
+				if _, err := csvRead.Read(); err != nil {
+					panic(err)
+				}
+				fmt.Sprintf("skipped rec %s", skipRec)
+				skip++
+			}
+			headerLine, err := csvRead.Read()
+			records, err := csvRead.ReadAll()
+			if err != nil {
+				panic(err)
+			}
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"991234","props":{"_:Date":"", "_:ID":"991234","_:Type":"1","_:Name":"Tester","_:Thing":"Yes"},"refs":{}},{"deleted":false,"id":"88456","props":{"_:Date":"","_:ID":"88456","_:Type":"abc","_:Name":"Fester", "_:Thing":"asd"},"refs":{}},{"id":"@continuation","token":""}]`
+			config := `{"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"ID"}}`
+			json.Unmarshal([]byte(config), &backend)
+			result = append(result, []byte("[")...)
+			result = append(result, []byte(buildContext(backend.DecodeConfig.Namespaces))...)
+			for _, record := range records {
+				var entityProps = make(map[string]interface{})
+				entityProps, err := decoder.parseRecord(record, headerLine)
+				if err != nil {
+					return
+				}
+				var entityBytes []byte
+				entityBytes, err = toEntityBytes(entityProps, backend)
+				if err != nil {
+					return
+				}
+				result = append(result, append([]byte(","), entityBytes...)...)
+			}
+			token := ""
+			// Add continuation token
+			entity := map[string]interface{}{
+				"id":    "@continuation",
+				"token": token,
+			}
+			sinceBytes, err := json.Marshal(entity)
+			result = append(result, append([]byte(","), sinceBytes...)...)
+			result = append(result, []byte("]")...)
+			g.Assert(err).IsNil()
+			var resultMap []map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap []map[string]interface{}
 			json.Unmarshal([]byte(expected), &expectedMap)
 			g.Assert(err).IsNil()
 			g.Assert(resultMap).Eql(expectedMap)

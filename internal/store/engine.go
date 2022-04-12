@@ -71,6 +71,8 @@ func (engine *StorageEngine) initBackend(backend conf.StorageBackend) (StorageIn
 		return NewAzureStorage(engine.logger, engine.env, backend, engine.statsd, backend.Dataset), nil
 	case "s3":
 		return NewS3Storage(engine.logger, engine.env, backend, engine.statsd, backend.Dataset)
+	case "localstorage":
+		return NewLocalStorage(engine.logger, engine.env, engine.statsd, backend, backend.Dataset), nil
 	default:
 		return &ConsoleStorage{
 			Logger: engine.logger.Named("console-store"),

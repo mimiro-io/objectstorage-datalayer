@@ -2,14 +2,15 @@ package encoder
 
 import (
 	"encoding/csv"
+	"encoding/json"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 	"strconv"
-
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 )
 
+// CsvFileEncoder ********************** ENCODER ****************************************/
 type CsvEncoder struct {
 	backend conf.StorageBackend
 	writer  *io.PipeWriter
@@ -109,4 +110,161 @@ func (enc *CsvEncoder) encode(entities []*entity.Entity) (int, error) {
 	writer.Flush()
 
 	return written, nil
+}
+
+// CsvFileDecoder ********************** DECODER ****************************************/
+
+type CsvDecoder struct {
+	backend    conf.StorageBackend
+	reader     *io.PipeReader
+	logger     *zap.SugaredLogger
+	csvreader  *csv.Reader
+	headerline []string
+	open       bool
+	closed     bool
+	since      string
+	overhang   []byte
+	fullSync   bool
+}
+
+func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
+	buf := make([]byte, 0, len(p))
+	var done bool
+	if len(dec.overhang) > 0 {
+		buf = append(buf, dec.overhang...)
+		dec.overhang = nil
+	}
+	if !dec.open {
+		dec.open = true
+		dec.csvreader = csv.NewReader(dec.reader)
+		buf = append(buf, []byte("[")...)
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+		buf = append(buf, []byte(buildContext(dec.backend.DecodeConfig.Namespaces))...)
+		config := dec.backend.CsvConfig // we come here, this should never be nil
+		//csvreader := csv.NewReader(dec.reader)
+		if config.Separator != "" {
+			dec.csvreader.Comma = rune(config.Separator[0])
+		}
+		dec.csvreader.FieldsPerRecord = -1
+		dec.skipRows()
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+	}
+
+	var headerLine []string
+	var record []string
+
+	if dec.headerline == nil {
+		headerLine, err = dec.csvreader.Read()
+		if err == nil {
+			dec.headerline = headerLine
+		}
+	}
+
+	//streaming doesnt work with ReadAll()
+	// append one entity per line, comma separated
+	for {
+		record, err = dec.csvreader.Read()
+
+		if err != nil || len(record) == 0 {
+			break
+		}
+		if len(record) < len(dec.headerline) {
+			dec.skipRows()
+			continue
+		}
+
+		var entityProps = make(map[string]interface{})
+		entityProps, err = dec.parseRecord(record, dec.headerline)
+		if err != nil {
+			return
+		}
+		var entityBytes []byte
+		entityBytes, err = toEntityBytes(entityProps, dec.backend)
+		if err != nil {
+			return
+		}
+		buf = append(buf, append([]byte(","), entityBytes...)...)
+
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+
+	}
+
+	// close json array
+	var sinceBytes []byte
+	if !dec.closed {
+		var token string
+		if dec.fullSync {
+			token = ""
+		} else {
+			token = dec.since
+		}
+		// Add continuation token
+		entity := map[string]interface{}{
+			"id":    "@continuation",
+			"token": token,
+		}
+		sinceBytes, err = json.Marshal(entity)
+		if err != nil {
+			panic(err)
+		}
+		buf = append(buf, append([]byte(","), sinceBytes...)...)
+		buf = append(buf, []byte("]")...)
+		dec.closed = true
+		if n, err, done = dec.flush(p, buf); done {
+			return
+		}
+	}
+	n = copy(p, buf)
+
+	return n, io.EOF
+}
+func (dec *CsvDecoder) skipRows() {
+	skip := 0
+	for skip < dec.backend.CsvConfig.SkipRows {
+		_, err := dec.csvreader.Read()
+		if err != nil {
+			panic(err)
+		}
+		skip++
+	}
+}
+func (dec *CsvDecoder) stringSlicesEqual(record []string) bool {
+	if len(record) != len(dec.headerline) {
+		return false
+	}
+	for i, v := range record {
+		if v != dec.headerline[i] {
+			return false
+		}
+	}
+	return true
+}
+func (dec *CsvDecoder) flush(p []byte, buf []byte) (int, error, bool) {
+	// p grows unexpectedly so 512 is set as hard byte cap.
+	if len(buf) >= 512 {
+		n := copy(p, buf)
+		dec.overhang = buf[n:]
+		return n, nil, true
+	}
+	return 0, nil, false
+}
+
+func (dec *CsvDecoder) Close() error {
+	return dec.Close()
+}
+
+func (dec *CsvDecoder) parseRecord(data []string, header []string) (map[string]interface{}, error) {
+	// convert csv lines to array of structs
+	var entityProps = make(map[string]interface{}, 0)
+	for j, key := range header {
+		entityProps[key] = data[j]
+
+	}
+	return entityProps, nil
 }

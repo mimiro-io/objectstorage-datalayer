@@ -17,6 +17,7 @@ type StorageBackend struct {
 	ParquetConfig    *ParquetConfig    `json:"parquet"`
 	Properties       PropertiesMapping `json:"props"`
 	DecodeConfig     *DecodeConfig     `json:"decode"`
+	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
 }
 type DecodeConfig struct {
 	Namespaces       map[string]string `json:"namespaces"`
@@ -24,6 +25,10 @@ type DecodeConfig struct {
 	Refs             []string          `json:"refs"`
 	IdProperty       string            `json:"idProperty"`
 	DefaultNamespace string            `json:"defaultNamespace"`
+}
+type LocalFileConfig struct {
+	RootFolder string `json:"rootfolder"`
+	FileSuffix string `json:"filesuffix"`
 }
 type PropertiesMapping struct {
 	Bucket             *string `json:"bucket,omitempty"`
@@ -40,10 +45,12 @@ type PropertiesMapping struct {
 }
 
 type CsvConfig struct {
-	Header    bool     `json:"header"`
-	Encoding  string   `json:"encoding"`
-	Separator string   `json:"separator"`
-	Order     []string `json:"order"`
+	Header         bool     `json:"header"`
+	Encoding       string   `json:"encoding"`
+	Separator      string   `json:"separator"`
+	Order          []string `json:"order"`
+	SkipRows       int      `json:"skiprows"`
+	ValidateFields bool     `json:"validatefields"`
 }
 
 type ParquetConfig struct {
