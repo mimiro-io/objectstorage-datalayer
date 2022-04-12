@@ -2,11 +2,12 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/uuid"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
-	"github.com/spf13/cast"
+	_ "github.com/spf13/cast"
 	"io"
 	"os"
 	"path/filepath"
@@ -214,7 +215,9 @@ func (ls *LocalStorage) GetEntities() (io.Reader, error) {
 }
 
 func (ls *LocalStorage) GetChanges(since string) (io.Reader, error) {
-	properties := ls.config.LocalFileConfig
+	return nil, errors.New("GetChanges not supported for AzureStorage")
+	//TODO: Write check for lastmodified sample code below.
+	/*properties := ls.config.LocalFileConfig
 	if properties.RootFolder != "" {
 		//key = fmt.Sprintf("%s", *properties.ResourceName)
 		fmt.Sprintf("Working on folder: %s", properties.RootFolder)
@@ -265,7 +268,7 @@ func (ls *LocalStorage) GetChanges(since string) (io.Reader, error) {
 			}
 		}
 	}()
-	return encoder.NewEntityDecoder(ls.config, reader, cast.ToString(latestLastModified), ls.logger, false)
+	return encoder.NewEntityDecoder(ls.config, reader, cast.ToString(latestLastModified), ls.logger, false)*/
 }
 
 func (ls *LocalStorage) findObjects(folder string) ([]FileInfo, error) {
