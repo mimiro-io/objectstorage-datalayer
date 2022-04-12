@@ -32,7 +32,7 @@ func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, since 
 func toEntityBytes(line map[string]interface{}, backend conf.StorageBackend) ([]byte, error) {
 
 	id, err := extractID(backend, line)
-	if err != nil {
+	if err != nil || id == "" {
 		return nil, err
 	}
 
