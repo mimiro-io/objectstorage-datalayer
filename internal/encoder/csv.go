@@ -187,6 +187,9 @@ func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
 		if err != nil {
 			return
 		}
+		if entityBytes == nil {
+			continue
+		}
 		buf = append(buf, append([]byte(","), entityBytes...)...)
 
 		if n, err, done = dec.flush(p, buf); done {
@@ -234,17 +237,7 @@ func (dec *CsvDecoder) skipRows() {
 		skip++
 	}
 }
-func (dec *CsvDecoder) stringSlicesEqual(record []string) bool {
-	if len(record) != len(dec.headerline) {
-		return false
-	}
-	for i, v := range record {
-		if v != dec.headerline[i] {
-			return false
-		}
-	}
-	return true
-}
+
 func (dec *CsvDecoder) flush(p []byte, buf []byte) (int, error, bool) {
 	// p grows unexpectedly so 512 is set as hard byte cap.
 	if len(buf) >= 512 {
