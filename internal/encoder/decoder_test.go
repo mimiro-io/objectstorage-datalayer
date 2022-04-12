@@ -3,7 +3,6 @@ package encoder
 import (
 	"encoding/csv"
 	"encoding/json"
-	"fmt"
 	"github.com/franela/goblin"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"io"
@@ -115,11 +114,9 @@ func TestDecodeLine(t *testing.T) {
 			csvRead.Comma = rune(backend.CsvConfig.Separator[0])
 			skip := 0
 			for skip < backend.CsvConfig.SkipRows {
-				var skipRec []string
 				if _, err := csvRead.Read(); err != nil {
 					panic(err)
 				}
-				fmt.Sprintf("skipped rec %s", skipRec)
 				skip++
 			}
 			headerLine, err := csvRead.Read()
