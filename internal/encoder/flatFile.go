@@ -85,19 +85,25 @@ func (enc *FlatFileEncoder) encode(entities []*entity.Entity) ([]byte, error) {
 			} else {
 				//	cast to string, then cut or append spaces to value according to substring config
 				var value string
+				var valueLength int
+				var runes []rune
 				switch fieldConfig.Type {
 				case "date":
 					dt, _ := time.Parse(time.RFC3339, fieldValue.(string))
 					value = dt.Format(fieldConfig.DateLayout)
+					valueLength = len(value)
 				case "float":
 					f := strconv.FormatFloat(fieldValue.(float64), 'f', fieldConfig.Decimals, 64)
 					value = strings.Replace(f, ".", "", -1)
+					valueLength = len(value)
 				case "integer":
 					value = fmt.Sprintf("%d", int(fieldValue.(float64)))
+					valueLength = len(value)
 				default:
 					value = fmt.Sprintf("%s", fieldValue)
+					runes = []rune(strings.ToValidUTF8(value, "_"))
+					valueLength = len(runes)
 				}
-				valueLength := len(value)
 				if valueLength < fieldSize {
 					diff := fieldSize - valueLength
 					if fieldConfig.Type == "integer" {
@@ -106,7 +112,11 @@ func (enc *FlatFileEncoder) encode(entities []*entity.Entity) ([]byte, error) {
 						preppedValue = appendSpaces(value, diff)
 					}
 				} else if valueLength > fieldSize {
-					preppedValue = value[:fieldSize]
+					if fieldConfig.Type == "string" || fieldConfig.Type == "" {
+						preppedValue = string(runes[:fieldSize])
+					} else {
+						preppedValue = value[:fieldSize]
+					}
 				} else {
 					preppedValue = value
 				}
