@@ -57,6 +57,22 @@ func TestFlatFile(t *testing.T) {
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
+		g.It("Should count number of utf8 characters in string fields", func() {
+			entities := []*entity.Entity{
+				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bår": "aååå"}},
+				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bår": "Ñ¢a"}},
+				{ID: "a:3", Properties: map[string]interface{}{"a:foo": "77", "a:bår": "§"}},
+			}
+			expected := "99aå\n88Ñ¢\n77§ \n"
+
+			config := `{"flatFile":{"fieldOrder":["foo","bår"],"fields":{"foo":{"substring":[[0,2]]},"bår":{"substring":[[2,4]]}}}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+
+			readResult, err := encodeOnce(backend, entities)
+			g.Assert(err).IsNil()
+			g.Assert(string(readResult)).Eql(expected)
+		})
 		g.It("Should produce timestamp according to date layout in field config", func() {
 			entities := []*entity.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa", "a:date": "2021-11-05T00:00:00Z"}},
