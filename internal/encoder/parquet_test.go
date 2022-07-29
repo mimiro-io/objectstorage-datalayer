@@ -26,7 +26,7 @@ func TestParquet(t *testing.T) {
 			}
 			result, err := encodeOnce(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(result)).Eql(261)
+			g.Assert(len(result)).Eql(348)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
@@ -56,7 +56,7 @@ func TestParquet(t *testing.T) {
 			}
 			result, err := encodeOnce(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(result)).Eql(357)
+			g.Assert(len(result)).Eql(473)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "name")
 			g.Assert(err).IsNil()
 
@@ -92,7 +92,7 @@ func TestParquet(t *testing.T) {
 			}
 			result, err := encodeTwice(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(result)).Eql(308)
+			g.Assert(len(result)).Eql(348)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
@@ -167,7 +167,7 @@ func TestParquet(t *testing.T) {
 			}
 			result, err := encodeOnce(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(result)).Eql(897)
+			g.Assert(len(result)).Eql(1239)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "abool", "aint32", "aint64", "afloat", "adouble", "abytes",
 				"five_bytes", "astring", "adate", "atime")
 			g.Assert(err).IsNil()
@@ -204,13 +204,13 @@ func TestParquet(t *testing.T) {
 			}
 			res, err := encodeTwice(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(res)).Eql(450)
+			g.Assert(len(res)).Eql(489)
 
 			// 100 byte threshold should result in separate rowgroup per write - therefore larger file
 			backend.ParquetConfig.FlushThreshold = 100
 			res, err = encodeTwice(backend, entities)
 			g.Assert(err).IsNil()
-			g.Assert(len(res)).Eql(723)
+			g.Assert(len(res)).Eql(892)
 		})
 	})
 }
