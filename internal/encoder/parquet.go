@@ -77,7 +77,7 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 		}
 		flushed := written - enc.pqWriter.CurrentRowGroupSize()
 		enc.logger.Debugf("Flushed %v parquet bytes to underlying writer. flushed in total: %v",
-		 	flushed, enc.pqWriter.CurrentFileSize())
+			flushed, enc.pqWriter.CurrentFileSize())
 		return int(flushed), nil
 	}
 	return 0, nil

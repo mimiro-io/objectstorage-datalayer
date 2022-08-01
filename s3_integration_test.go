@@ -488,8 +488,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(272)
-			g.Assert(int(*fileSizes[1])).Eql(272)
+			g.Assert(int(*fileSizes[0])).Eql(339)
+			g.Assert(int(*fileSizes[1])).Eql(339)
 		})
 		g.It("Should write incremental parquet files with optional values", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -506,8 +506,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(263)
-			g.Assert(int(*fileSizes[1])).Eql(263)
+			g.Assert(int(*fileSizes[0])).Eql(330)
+			g.Assert(int(*fileSizes[1])).Eql(330)
 		})
 		g.It("Should write fullsync parquet files", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -536,7 +536,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/latest")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(797)
+			g.Assert(int(*fileSizes[0])).Eql(1062)
 		})
 		g.It("Should export athena schemas for parquet datasets", func() {
 			fileBytes, _ := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
