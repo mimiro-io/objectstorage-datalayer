@@ -2,10 +2,12 @@ package encoder_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/franela/goblin"
 	goparquet "github.com/fraugster/parquet-go"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"io/ioutil"
 	"testing"
 	"time"
 )
@@ -39,6 +41,9 @@ func TestParquet(t *testing.T) {
 			row, _ = pqReader.NextRow()
 			g.Assert(row["id"]).Eql(int64(2))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
+
+			//read file
+
 		})
 
 		g.It("Should process files with missing column values if field is optional", func() {
@@ -211,6 +216,56 @@ func TestParquet(t *testing.T) {
 			res, err = encodeTwice(backend, entities)
 			g.Assert(err).IsNil()
 			g.Assert(len(res)).Eql(892)
+		})
+	})
+	g.Describe("The Parquet Decoder", func() {
+		g.It("Should produce integer value in json entity according to field config", func() {
+			entities := []byte("99123\n88456\n")
+
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"99","props":{"_:bar":123,"_:foo":"99"},"refs":{}},{"deleted":false,"id":"88","props":{"_:bar":456,"_:foo":"88"},"refs":{}},{"id":"@continuation","token":""}]`
+
+			config := `{"flatFile":{"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]],"type":"integer"}}},"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"foo"}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+
+			reader, err := decodeOnce(backend, entities)
+			g.Assert(err).IsNil()
+			all, err := ioutil.ReadAll(reader)
+			g.Assert(err).IsNil()
+			g.Assert(len(all)).Eql(243)
+			g.Assert(string(all)).Eql(expected)
+		})
+		g.It("Should produce float value in json entity according to field config", func() {
+			entities := []byte("99123\n88456\n")
+
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"99","props":{"_:bar":1.23,"_:foo":"99"},"refs":{}},{"deleted":false,"id":"88","props":{"_:bar":4.56,"_:foo":"88"},"refs":{}},{"id":"@continuation","token":""}]`
+
+			config := `{"flatFile":{"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]],"type":"float", "decimals": 2}}},"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"foo"}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+
+			reader, err := decodeOnce(backend, entities)
+			g.Assert(err).IsNil()
+			all, err := ioutil.ReadAll(reader)
+			g.Assert(err).IsNil()
+			g.Assert(len(all)).Eql(245)
+			g.Assert(string(all)).Eql(expected)
+		})
+		g.It("Should produce date value in json entity according to field config", func() {
+			entities := []byte("9920211105\n8820211205\n")
+
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"99","props":{"_:date":"2021-11-05T00:00:00Z","_:foo":"99"},"refs":{}},{"deleted":false,"id":"88","props":{"_:date":"2021-12-05T00:00:00Z","_:foo":"88"},"refs":{}},{"id":"@continuation","token":""}]`
+
+			config := `{"flatFile":{"fields":{"foo":{"substring":[[0,2]]},"date":{"substring":[[2,10]],"type":"date","dateLayout":"20060102"}}},"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"foo"}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+
+			reader, err := decodeOnce(backend, entities)
+			g.Assert(err).IsNil()
+			all, err := ioutil.ReadAll(reader)
+			g.Assert(err).IsNil()
+			g.Assert(len(all)).Eql(283)
+			g.Assert(string(all)).Eql(expected)
 		})
 	})
 }

@@ -12,8 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -23,16 +25,42 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/elgohr/go-localstack"
 	"github.com/franela/goblin"
-	"github.com/olivere/ndjson"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
-	"go.uber.org/fx"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/app"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"github.com/olivere/ndjson"
+
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
+	"github.com/xitongsys/parquet-go-source/local"
+	xitS3 "github.com/xitongsys/parquet-go-source/s3"
+	"github.com/xitongsys/parquet-go/parquet"
+	"github.com/xitongsys/parquet-go/reader"
+	"github.com/xitongsys/parquet-go/writer"
+	"go.uber.org/fx"
 )
+
+type Student struct {
+	Name    string  `parquet:"name=name, type=BYTE_ARRAY, convertedtype=UTF8, encoding=PLAIN_DICTIONARY"`
+	Age     int32   `parquet:"name=age, type=INT32, encoding=PLAIN"`
+	Id      int64   `parquet:"name=id, type=INT64"`
+	Weight  float32 `parquet:"name=weight, type=FLOAT"`
+	Sex     bool    `parquet:"name=sex, type=BOOLEAN"`
+	Day     int32   `parquet:"name=day, type=INT32, convertedtype=DATE"`
+	Ignored int32   //without parquet tag and won't write
+}
+
+type IntraDayFactorParquet struct {
+	Date      string  `parquet:"name=Date, type=UTF8, encoding=PLAIN"`
+	Time      string  `parquet:"name=Time, type=UTF8, encoding=PLAIN"`
+	StockCode string  `parquet:"name=StockCode, type=UTF8, encoding=PLAIN_DICTIONARY"`
+	Fac0      float64 `parquet:"name=15m.ActBuyNumToTotalTransactNum, type=DOUBLE"`
+	Fac1      float64 `parquet:"name=15m.ActBuyTransVolToBuyOrderVol, type=DOUBLE"`
+	Fac2      float64 `parquet:"name=15m.ActBuyVolToTotalTransactVol, type=DOUBLE"`
+}
 
 func TestS3(t *testing.T) {
 	g := goblin.Goblin(t)
@@ -122,6 +150,7 @@ func TestS3(t *testing.T) {
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-csv-mapping\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena-deletedTrue\",\"type\":[\"POST\"]}")).IsTrue()
+			g.Assert(strings.Contains(body, "{\"name\":\"s3-parquet-mapping\",\"type\":[\"POST\"]}")).IsTrue()
 		})
 		g.It("Should upload batches larger than the json reader's batch size", func() {
 			//g.Timeout(1 * time.Hour)
@@ -538,6 +567,81 @@ func TestS3(t *testing.T) {
 			g.Assert(len(fileSizes)).Eql(1)
 			g.Assert(int(*fileSizes[0])).Eql(1062)
 		})
+
+		// ###############################################################################################//
+		// #####################################SIMEN TEST LOCAL##########################################//
+		// ###############################################################################################//
+		g.It("SIMEN: Should write parquet file to s3", func() {
+			//write
+			fw, err := local.NewLocalFileWriter("./resources/test/data/latest-prima2.parquet")
+			if err != nil {
+				log.Println("Can't create local file", err)
+				return
+			}
+
+			//write
+			pw, err := writer.NewParquetWriter(fw, new(Student), 4)
+			if err != nil {
+				log.Println("Can't create parquet writer", err)
+				return
+			}
+
+			pw.RowGroupSize = 128 * 1024 * 1024 //128M
+			pw.PageSize = 8 * 1024              //8K
+			pw.CompressionType = parquet.CompressionCodec_SNAPPY
+			num := 100
+			for i := 0; i < num; i++ {
+				stu := Student{
+					Name:   "StudentName",
+					Age:    int32(20 + i%5),
+					Id:     int64(i),
+					Weight: float32(50.0 + float32(i)*0.1),
+					Sex:    bool(i%2 == 0),
+					Day:    int32(time.Now().Unix() / 3600 / 24),
+				}
+				if err = pw.Write(stu); err != nil {
+					log.Println("Write error", err)
+				}
+			}
+			if err = pw.WriteStop(); err != nil {
+				log.Println("WriteStop error", err)
+				return
+			}
+			log.Println("Write Finished")
+			fw.Close()
+
+			///read
+			fr, err := local.NewLocalFileReader("./resources/test/data/latest-prima2.parquet")
+			if err != nil {
+				log.Println("Can't open file")
+				return
+			}
+
+			pr, err := reader.NewParquetReader(fr, new(Student), 4)
+			if err != nil {
+				log.Println("Can't create parquet reader", err)
+				return
+			}
+			num = int(pr.GetNumRows())
+			for i := 0; i < num/10; i++ {
+				if i%2 == 0 {
+					pr.SkipRows(10) //skip 10 rows
+					continue
+				}
+				stus := make([]Student, 10) //read 10 rows
+				if err = pr.Read(&stus); err != nil {
+					log.Println("Read error", err)
+				}
+				log.Println(stus)
+			}
+
+			pr.ReadStop()
+			fr.Close()
+		})
+		// ###############################################################################################//
+		// #####################################SIMEN TEST LOCAL##########################################//
+		// ###############################################################################################//
+
 		g.It("Should export athena schemas for parquet datasets", func() {
 			fileBytes, _ := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
 			http.Post(layerUrl+"/s3-parquet-mapping/entities", "application/javascript", bytes.NewReader(fileBytes))
@@ -682,10 +786,102 @@ func TestS3(t *testing.T) {
 			err = json.Unmarshal(bodyBytes3, &entities3)
 			g.Assert(err).IsNil()
 			g.Assert(len(entities3)).Eql(5, "context, continuation and 3 changes")
+		})
+		//######################################//
+		//######################################//
+		g.It("Should TESTTESTSETSETSET", func() {
+			type student struct {
+				Name   string  `parquet:"name=name, type=UTF8"`
+				Age    int32   `parquet:"name=age, type=INT32"`
+				ID     int64   `parquet:"name=id, type=INT64"`
+				Weight float32 `parquet:"name=weight, type=FLOAT"`
+				Sex    bool    `parquet:"name=sex, type=BOOLEAN"`
+			}
 
+			sess := session.Must(session.NewSession())
+
+			// Create an uploader with the session and default options
+			uploader := s3manager.NewUploader(sess)
+			filename := "flat.parquet"
+
+			f, err := os.Open(filename)
+			if err != nil {
+				fmt.Println("første feil")
+			}
+			ctx := context.Background()
+			bucket := "s3-test-bucket"
+			key := "s3-parquet/test.parquet"
+			fw, err := xitS3.NewS3FileWriter(ctx, bucket, key, nil)
+			if err != nil {
+				log.Println("Can't create parquet writer", err)
+				return
+			}
+			t.Log("FW: ", fw)
+			// create new parquet file writer
+			pw, err := writer.NewParquetWriter(fw, new(student), 4)
+			t.Log("PW: ", pw)
+			if err != nil {
+				log.Println("Can't create parquet writer", err)
+				return
+			}
+			// Upload the file to S3.
+			result, err := uploader.Upload(&s3manager.UploadInput{
+				Bucket: aws.String(bucket),
+				Key:    aws.String(key),
+				Body:   f,
+			})
+			if err != nil {
+				fmt.Println("andre feil")
+			}
+			t.Log(result.Location)
 		})
 	})
 }
+
+// ###############################################################################################//
+// #####################################SIMEN TEST################################################//
+// ###############################################################################################//
+// Uploads a file to AWS S3 given an S3 session client, a bucket name and a file path
+func uploadFileToS3(
+	s3Client *s3.S3,
+	bucketName string,
+	filePath string,
+) error {
+
+	// Get the fileName from Path
+	fileName := filepath.Base(filePath)
+
+	// Open the file from the file path
+	upFile, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("could not open local filepath [%v]: %+v", filePath, err)
+	}
+	defer upFile.Close()
+
+	// Get the file info
+	upFileInfo, _ := upFile.Stat()
+	var fileSize int64 = upFileInfo.Size()
+	fileBuffer := make([]byte, fileSize)
+	upFile.Read(fileBuffer)
+
+	// Put the file object to s3 with the file name
+	_, err = s3Client.PutObject(&s3.PutObjectInput{
+		Bucket:               aws.String(bucketName),
+		Key:                  aws.String(fileName),
+		ACL:                  aws.String("private"),
+		Body:                 bytes.NewReader(fileBuffer),
+		ContentLength:        aws.Int64(fileSize),
+		ContentType:          aws.String(http.DetectContentType(fileBuffer)),
+		ContentDisposition:   aws.String("attachment"),
+		ServerSideEncryption: aws.String("AES256"),
+	})
+	return err
+}
+
+//###############################################################################################//
+//#####################################SIMEN TEST################################################//
+//###############################################################################################//
+
 func ByteCountIEC(b int64) string {
 	const unit = 1024
 	if b < unit {
