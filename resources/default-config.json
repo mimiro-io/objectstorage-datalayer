@@ -1,52 +1,6 @@
 {
     "id": "storage-test",
     "storageBackends": [
-        {
-            "dataset": "simen-test",
-            "storageType": "S3",
-            "athenaCompatible": true,
-            "storeDeleted": false,
-            "stripProps": true,
-            "decode": {
-                "namespaces": {
-                    "_": "http://data.mimiro.io/sdb/animal/"
-                },
-                "propertyPrefixes": {
-                    "productionid": "_",
-                    "owner_id": "_",
-                    "year": "_",
-                    "type": "_",
-                    "aarsdyr": "_"
-                },
-                "idProperty": "Id"
-            },
-            "props": {
-                "customResourcePath": true,
-                "resourceName": "datasets/sdb.Animal/latest/latest-fullsync.parquet",
-                "bucket": "datalayer-storage-sink-dev",
-                "key": "AccessKeyId",
-                "secret": "S3_STORAGE_SECRET_ACCESSKEYID",
-                "region": "eu-west-1"
-            }
-        },
-        {
-            "dataset": "s3-parquet-mapping",
-            "storageType": "S3",
-            "storeDeleted": false,
-            "stripProps": true,
-            "parquet": {
-                "flushThreshold": 20,
-                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING); }"
-            },
-            "props": {
-                "bucket": "s3-test-bucket",
-                "resourceName": "test.parquet",
-                "endpoint": "http://localhost:8888",
-                "region": "us-east-1",
-                "key": "AccessKeyId",
-                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
-            }
-        }
     ],
     "storageMapping": [
 

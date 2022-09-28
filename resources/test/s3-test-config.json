@@ -145,35 +145,6 @@
                 "refs":[],
                 "idProperty":"foo"
             }
-        },
-        {
-            "dataset": "simen-test",
-            "storageType": "S3",
-            "athenaCompatible": true,
-            "storeDeleted": false,
-            "stripProps": true,
-            "decode": {
-                "namespaces": {
-                    "_": "http://data.mimiro.io/sdb/animal/"
-                },
-                "propertyPrefixes": {
-                    "productionid": "_",
-                    "owner_id": "_",
-                    "year": "_",
-                    "type": "_",
-                    "aarsdyr": "_"
-                },
-                "idProperty": "Id"
-            },
-            "props": {
-                "customResourcePath": true,
-                "bucket": "s3-test-bucket",
-                "resourceName": "simen-test.parquet",
-                "endpoint": "http://localhost:8888",
-                "region": "us-east-1",
-                "key": "AccessKeyId",
-                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
-            }
         }
     ]
 }
