@@ -5,9 +5,10 @@ go 1.19
 require (
 	github.com/Azure/azure-storage-blob-go v0.15.0
 	github.com/DataDog/datadog-go v4.8.3+incompatible
-	github.com/aws/aws-sdk-go v1.44.103
+	github.com/aws/aws-sdk-go v1.44.108
 	github.com/bamzi/jobrunner v1.0.0
 	github.com/bcicen/jstream v1.0.1
+	github.com/containerd/containerd v1.5.13 // indirect
 	github.com/docker/go-connections v0.4.0
 	github.com/elgohr/go-localstack v0.0.0-20220729003903-b650ea8ab53d
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
@@ -23,7 +24,7 @@ require (
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/viper v1.13.0
 	github.com/testcontainers/testcontainers-go v0.13.0
-	go.uber.org/fx v1.18.1
+	go.uber.org/fx v1.18.2
 	go.uber.org/zap v1.23.0
 )
 
@@ -31,8 +32,8 @@ require (
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Masterminds/semver/v3 v3.1.1 // indirect
-	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/Microsoft/hcsshim v0.8.23 // indirect
+	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/Microsoft/hcsshim v0.8.24 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/apache/thrift v0.17.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.7 // indirect
@@ -50,8 +51,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.9 // indirect
 	github.com/aws/smithy-go v1.12.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
-	github.com/containerd/cgroups v1.0.1 // indirect
-	github.com/containerd/containerd v1.5.9 // indirect
+	github.com/containerd/cgroups v1.0.3 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.14+incompatible // indirect
@@ -103,14 +103,13 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/dig v1.15.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/net v0.0.0-20220921203646-d300de134e69 // indirect
-	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
+	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220922195421-2adab6b8c60e // indirect
+	golang.org/x/net v0.0.0-20220927171203-f486391704dc // indirect
+	golang.org/x/sys v0.0.0-20220928140112-f11e5e49a4ec // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/time v0.0.0-20220920022843-2ce7c2934d45 // indirect
-	golang.org/x/tools v0.1.10 // indirect
-	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
+	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd // indirect
 	google.golang.org/grpc v1.46.2 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
