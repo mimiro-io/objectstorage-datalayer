@@ -2,6 +2,7 @@ package encoder
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -79,8 +80,7 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 			return 0, err
 		}
 		flushed := written - enc.pqWriter.CurrentRowGroupSize()
-		enc.logger.Debugf("Flushed %v parquet bytes to underlying writer. flushed in total: %v",
-			flushed, enc.pqWriter.CurrentFileSize())
+		enc.logger.Debugf("Flushed %v parquet bytes to underlying writer. flushed in total: %v", flushed, enc.pqWriter.CurrentFileSize())
 		return int(flushed), nil
 	}
 	return 0, nil
@@ -157,11 +157,7 @@ func (enc *ParquetEncoder) Open() error {
 	enc.logger.Infof("writing parquet files with flushThreshold %v", enc.flushThreshold)
 	enc.schemaDef = schemaDef
 
-	enc.pqWriter = goparquet.NewFileWriter(enc.writer,
-		goparquet.WithCompressionCodec(parquet.CompressionCodec_SNAPPY),
-		goparquet.WithSchemaDefinition(schemaDef),
-		goparquet.WithCreator("objectstorage-datalayer"),
-	)
+	enc.pqWriter = goparquet.NewFileWriter(enc.writer, goparquet.WithCompressionCodec(parquet.CompressionCodec_SNAPPY), goparquet.WithSchemaDefinition(schemaDef), goparquet.WithCreator("objectstorage-datalayer"))
 
 	enc.open = true
 
@@ -183,6 +179,7 @@ type ParquetDecoder struct {
 	overhang []byte
 	since    string
 	fullSync bool
+	pqReader *goparquet.FileReader
 }
 
 func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
@@ -195,40 +192,46 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 
 	if !d.open {
 		d.open = true
-		d.scanner = bufio.NewScanner(d.reader)
+		allBytes, err := io.ReadAll(d.reader)
+		if err != nil {
+			return n, err
+		}
+		readSeeker := bytes.NewReader(allBytes)
+		d.pqReader, err = goparquet.NewFileReader(readSeeker, "id")
+		if err != nil {
+			return n, err
+		}
 		//start json array and add context as first entity
 		buf = append(buf, []byte("[")...)
 		if n, err, done = d.flush(p, buf); done {
-			return
+			return n, err
 		}
 		buf = append(buf, []byte(buildContext(d.backend.DecodeConfig.Namespaces))...)
 		if n, err, done = d.flush(p, buf); done {
-			return
+			return n, err
 		}
 	}
 	// append one entity per line, comma separated
-	for d.scanner.Scan() {
 
-		line := d.scanner.Text()
+	for {
+		row, err := d.pqReader.NextRow()
 		//d.logger.Debugf("Got line : '%s'", line)
-		var entityProps map[string]interface{}
+		var entityProps = row
 		if err != nil {
-			d.logger.Errorf("Failed to parse line: '%s'", line)
-			if d.backend.ParquetConfig.ContinueOnParseError {
-				continue
-			} else {
-				return
+			if err.Error() == "EOF" {
+				break
 			}
+			return n, err
 		}
 
 		var entityBytes []byte
 		entityBytes, err = toEntityBytes(entityProps, d.backend)
 		if err != nil {
-			return
+			return n, err
 		}
 		buf = append(buf, append([]byte(","), entityBytes...)...)
 		if n, err, done = d.flush(p, buf); done {
-			return
+			return n, err
 		}
 	}
 	var token string

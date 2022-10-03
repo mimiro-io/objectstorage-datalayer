@@ -32,10 +32,6 @@ func NewEntityEncoder(backend conf.StorageBackend, writer *io.PipeWriter, logger
 		return &FlatFileEncoder{backend: backend, writer: writer, logger: logger}
 	}
 
-	if backend.ParquetConfig != nil {
-		return &ParquetEncoder{backend: backend, writer: writer, logger: logger}
-	}
-
 	return &JSONEncoder{backend: backend, writer: writer, logger: logger}
 }
 

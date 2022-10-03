@@ -54,10 +54,9 @@ type CsvConfig struct {
 }
 
 type ParquetConfig struct {
-	SchemaDefinition     string   `json:"schema"`
-	FlushThreshold       int64    `json:"flushThreshold"`
-	Partitioning         []string `json:"partitioning"`
-	ContinueOnParseError bool     `json:"continueOnParseError"`
+	SchemaDefinition string   `json:"schema"`
+	FlushThreshold   int64    `json:"flushThreshold"`
+	Partitioning     []string `json:"partitioning"`
 }
 
 type FlatFileConfig struct {

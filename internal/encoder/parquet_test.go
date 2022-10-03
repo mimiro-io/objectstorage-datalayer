@@ -220,17 +220,28 @@ func TestParquet(t *testing.T) {
 	})
 	g.Describe("The Parquet Decoder", func() {
 		g.It("Should produce integer value in json entity according to field config", func() {
-			entities := []byte("99123\n88456\n")
-
 			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"99","props":{"_:bar":123,"_:foo":"99"},"refs":{}},{"deleted":false,"id":"88","props":{"_:bar":456,"_:foo":"88"},"refs":{}},{"id":"@continuation","token":""}]`
 
-			config := `{"flatFile":{"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]],"type":"integer"}}},"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"foo"}}`
-			var backend conf.StorageBackend
-			json.Unmarshal([]byte(config), &backend)
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required int64 id;
+					required binary key (STRING);
+				}`,
+			},
+				DecodeConfig: &conf.DecodeConfig{
+					IdProperty:       "id",
+					DefaultNamespace: "_",
+					Namespaces:       map[string]string{"_": "http://hei"}}}
 
-			reader, err := decodeOnce(backend, entities)
+			entities := []*entity.Entity{
+				{ID: "a:1", Properties: map[string]interface{}{"b:id": 1, "a:key": "value 1"}},
+				{ID: "a:2", Properties: map[string]interface{}{"b:id": 2, "a:key": "value 2"}},
+			}
+			result, err := encodeOnce(backend, entities)
+			reader, err := decodeOnce(backend, result)
 			g.Assert(err).IsNil()
 			all, err := ioutil.ReadAll(reader)
+			t.Log(string(all))
 			g.Assert(err).IsNil()
 			g.Assert(len(all)).Eql(243)
 			g.Assert(string(all)).Eql(expected)

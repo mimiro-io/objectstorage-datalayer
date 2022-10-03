@@ -102,6 +102,9 @@ func extractID(backend conf.StorageBackend, m map[string]interface{}) (string, e
 
 	if len(backend.DecodeConfig.IdProperty) > 0 {
 		value := m[backend.DecodeConfig.IdProperty]
+		if value == nil {
+			return "", fmt.Errorf("could not extract id from entity")
+		}
 		prefix := backend.DecodeConfig.PropertyPrefixes[backend.DecodeConfig.IdProperty]
 		_, valuePrefix := prefixValues(prefix)
 		if valuePrefix == "" {
