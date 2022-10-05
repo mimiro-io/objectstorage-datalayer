@@ -25,7 +25,7 @@ func TestLocalstore(t *testing.T) {
 				resultList = append(resultList, object.FilePath)
 			}
 			g.Assert(resultList).IsNotNil()
-			expected := "../../resources/test/data/changes-1.json,../../resources/test/data/changes-2.json,../../resources/test/data/changes-3.json,../../resources/test/data/flatfile-changes-1.txt,../../resources/test/data/flatfile-changes-2.txt,../../resources/test/data/flatfile-changes-3.txt,../../resources/test/data/latest-prima.parquet,../../resources/test/data/parquet-test-1.parquet,../../resources/test/data/parquet-test-2.parquet,../../resources/test/data/parquet-test-3.parquet,../../resources/test/data/parquet-test.parquet,../../resources/test/data/s3-test-1.json,../../resources/test/data/s3-test-1v2.json,../../resources/test/data/s3-test-2.json,../../resources/test/data/s3-test-3.json,../../resources/test/data/stripped.ndjson,../../resources/test/data/unstripped.ndjson"
+			expected := "../../resources/test/data/changes-1.json,../../resources/test/data/changes-2.json,../../resources/test/data/changes-3.json,../../resources/test/data/flatfile-changes-1.txt,../../resources/test/data/flatfile-changes-2.txt,../../resources/test/data/flatfile-changes-3.txt,../../resources/test/data/s3-test-1.json,../../resources/test/data/s3-test-1v2.json,../../resources/test/data/s3-test-2.json,../../resources/test/data/s3-test-3.json,../../resources/test/data/stripped.ndjson,../../resources/test/data/unstripped.ndjson"
 			expectedList := strings.Split(expected, ",")
 			g.Assert(resultList).Eql(expectedList)
 		})

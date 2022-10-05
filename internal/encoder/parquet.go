@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strconv"
 	"time"
 
 	goparquet "github.com/fraugster/parquet-go"
@@ -271,35 +270,4 @@ func (d *ParquetDecoder) flush(p []byte, buf []byte) (int, error, bool) {
 
 func (d *ParquetDecoder) Close() error {
 	return d.reader.Close()
-}
-
-func (d *ParquetDecoder) convertType(value string, fieldConfig conf.FlatFileField) (interface{}, error) {
-	switch fieldConfig.Type {
-	case "integer":
-		return strconv.Atoi(value)
-	case "float":
-		index := fieldConfig.Decimals
-		if index == 0 {
-			return value, errors.New("no decimals defined for type float in flat file field config")
-		}
-		withComma := value[:len(value)-index] + "." + value[len(value)-index:]
-		asFloat, err := strconv.ParseFloat(withComma, 64)
-		if err != nil {
-			return value, err
-		}
-		return asFloat, nil
-	case "date":
-		layout := fieldConfig.DateLayout
-		if layout == "" {
-			return value, errors.New("no date layout defined for type date in flat file field config")
-		}
-		timestamp, err := time.Parse(layout, value)
-		if err != nil {
-			return value, err
-		}
-		return timestamp.Format(time.RFC3339), nil
-	default:
-		return value, nil
-	}
-
 }
