@@ -23,15 +23,17 @@ import (
 	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/elgohr/go-localstack"
 	"github.com/franela/goblin"
-	"github.com/olivere/ndjson"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
-	"go.uber.org/fx"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/app"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"github.com/olivere/ndjson"
+
+	"github.com/ory/dockertest/v3"
+	"github.com/ory/dockertest/v3/docker"
+	"go.uber.org/fx"
 )
 
 func TestS3(t *testing.T) {
@@ -122,6 +124,8 @@ func TestS3(t *testing.T) {
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-csv-mapping\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena-deletedTrue\",\"type\":[\"POST\"]}")).IsTrue()
+			g.Assert(strings.Contains(body, "{\"name\":\"s3-parquet-mapping\",\"type\":[\"POST\"]}")).IsTrue()
+			g.Assert(strings.Contains(body, "{\"name\":\"s3-parquet-test\",\"type\":[\"POST\"]}")).IsTrue()
 		})
 		g.It("Should upload batches larger than the json reader's batch size", func() {
 			//g.Timeout(1 * time.Hour)
@@ -538,6 +542,7 @@ func TestS3(t *testing.T) {
 			g.Assert(len(fileSizes)).Eql(1)
 			g.Assert(int(*fileSizes[0])).Eql(1062)
 		})
+
 		g.It("Should export athena schemas for parquet datasets", func() {
 			fileBytes, _ := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
 			http.Post(layerUrl+"/s3-parquet-mapping/entities", "application/javascript", bytes.NewReader(fileBytes))
@@ -682,10 +687,29 @@ func TestS3(t *testing.T) {
 			err = json.Unmarshal(bodyBytes3, &entities3)
 			g.Assert(err).IsNil()
 			g.Assert(len(entities3)).Eql(5, "context, continuation and 3 changes")
+		})
+		g.It("Should upload and read parquet to S3", func() {
+			fileBytes, _ := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
+			var expected []map[string]interface{}
+			err := json.Unmarshal(fileBytes, &expected)
+			g.Assert(err).IsNil()
+
+			req, _ := http.NewRequest("POST", layerUrl+"/s3-parquet-test/entities", bytes.NewReader(fileBytes))
+			_, _ = http.DefaultClient.Do(req)
+			retrieveFirstObjectFromS3(s3Service, "s3-test-bucket")
+			resp, err := http.Get(layerUrl + "/s3-parquet-test/changes")
+			g.Assert(err).IsNil()
+
+			g.Assert(resp.StatusCode).Eql(200)
+			bodyBytes, _ := io.ReadAll(resp.Body)
+			var entities []map[string]interface{}
+			err = json.Unmarshal(bodyBytes, &entities)
+			g.Assert(err).IsNil()
 
 		})
 	})
 }
+
 func ByteCountIEC(b int64) string {
 	const unit = 1024
 	if b < unit {

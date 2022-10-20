@@ -26,6 +26,9 @@ func NewEntityDecoder(backend conf.StorageBackend, reader *io.PipeReader, since 
 	if backend.CsvConfig != nil {
 		return &CsvDecoder{backend: backend, reader: reader, logger: logger, since: since, fullSync: fullSync}, nil
 	}
+	if backend.ParquetConfig != nil {
+		return &ParquetDecoder{backend: backend, reader: reader, logger: logger, since: since, fullSync: fullSync}, nil
+	}
 	return nil, errors.New("this dataset has no decoder")
 }
 
@@ -99,6 +102,9 @@ func extractID(backend conf.StorageBackend, m map[string]interface{}) (string, e
 
 	if len(backend.DecodeConfig.IdProperty) > 0 {
 		value := m[backend.DecodeConfig.IdProperty]
+		if value == nil {
+			return "", fmt.Errorf("could not extract id from entity")
+		}
 		prefix := backend.DecodeConfig.PropertyPrefixes[backend.DecodeConfig.IdProperty]
 		_, valuePrefix := prefixValues(prefix)
 		if valuePrefix == "" {

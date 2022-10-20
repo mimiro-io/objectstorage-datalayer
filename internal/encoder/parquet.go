@@ -1,6 +1,9 @@
 package encoder
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -76,8 +79,7 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 			return 0, err
 		}
 		flushed := written - enc.pqWriter.CurrentRowGroupSize()
-		enc.logger.Debugf("Flushed %v parquet bytes to underlying writer. flushed in total: %v",
-			flushed, enc.pqWriter.CurrentFileSize())
+		enc.logger.Debugf("Flushed %v parquet bytes to underlying writer. flushed in total: %v", flushed, enc.pqWriter.CurrentFileSize())
 		return int(flushed), nil
 	}
 	return 0, nil
@@ -154,13 +156,136 @@ func (enc *ParquetEncoder) Open() error {
 	enc.logger.Infof("writing parquet files with flushThreshold %v", enc.flushThreshold)
 	enc.schemaDef = schemaDef
 
-	enc.pqWriter = goparquet.NewFileWriter(enc.writer,
-		goparquet.WithCompressionCodec(parquet.CompressionCodec_SNAPPY),
-		goparquet.WithSchemaDefinition(schemaDef),
-		goparquet.WithCreator("objectstorage-datalayer"),
-	)
+	enc.pqWriter = goparquet.NewFileWriter(enc.writer, goparquet.WithCompressionCodec(parquet.CompressionCodec_SNAPPY), goparquet.WithSchemaDefinition(schemaDef), goparquet.WithCreator("objectstorage-datalayer"))
 
 	enc.open = true
 
 	return nil
+}
+
+//#######################################################################//
+//--------------------------------READ-----------------------------------//
+//#######################################################################//
+
+// ParquetDecoder ********************** DECODER ****************************************/
+type ParquetDecoder struct {
+	backend  conf.StorageBackend
+	logger   *zap.SugaredLogger
+	reader   *io.PipeReader
+	scanner  *bufio.Scanner
+	open     bool
+	closed   bool
+	overhang []byte
+	since    string
+	fullSync bool
+	pqReader *goparquet.FileReader
+}
+
+func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
+	buf := make([]byte, 0, len(p))
+	var done bool
+	if len(d.overhang) > 0 {
+		buf = append(buf, d.overhang...)
+		d.overhang = nil
+	}
+
+	if !d.open {
+		d.open = true
+		allBytes, err := io.ReadAll(d.reader)
+		if err != nil {
+			return n, err
+		}
+		readSeeker := bytes.NewReader(allBytes)
+		d.pqReader, err = goparquet.NewFileReader(readSeeker, "id")
+		if err != nil {
+			return n, err
+		}
+		//start json array and add context as first entity
+		buf = append(buf, []byte("[")...)
+		if n, err, done = d.flush(p, buf); done {
+			return n, err
+		}
+		buf = append(buf, []byte(buildContext(d.backend.DecodeConfig.Namespaces))...)
+		if n, err, done = d.flush(p, buf); done {
+			return n, err
+		}
+	}
+
+	// append one entity per line, comma separated
+	count := 0
+	for {
+		row, err := d.pqReader.NextRow()
+		var entityProps = row
+
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return n, err
+
+		}
+
+		var entityBytes []byte
+		entityProps, err = d.ParseLine(entityProps)
+		entityBytes, err = toEntityBytes(entityProps, d.backend)
+		if err != nil {
+			return n, err
+		}
+
+		buf = append(buf, append([]byte(","), entityBytes...)...)
+		if n, err, done = d.flush(p, buf); done {
+			return n, err
+		}
+
+		count++
+	}
+	var token string
+	if d.fullSync {
+		token = ""
+	} else {
+		token = d.since
+	}
+	// Add continuation token
+	continueEntity := map[string]interface{}{
+		"id":    "@continuation",
+		"token": token,
+	}
+	sinceBytes, err := json.Marshal(continueEntity)
+	buf = append(buf, append([]byte(","), sinceBytes...)...)
+
+	// close json array
+	if !d.closed {
+		buf = append(buf, []byte("]")...)
+		d.closed = true
+		if n, err, done = d.flush(p, buf); done {
+			return
+		}
+	}
+	n = copy(p, buf)
+	return n, io.EOF
+}
+
+func (d *ParquetDecoder) flush(p []byte, buf []byte) (int, error, bool) {
+	if len(buf) >= len(p) {
+		n := copy(p, buf)
+		d.overhang = buf[n:]
+		return n, nil, true
+	}
+	return 0, nil, false
+}
+
+func (d *ParquetDecoder) Close() error {
+	return d.reader.Close()
+}
+
+func (d *ParquetDecoder) ParseLine(line map[string]interface{}) (map[string]interface{}, error) {
+	var entityProps = make(map[string]interface{}, 0)
+
+	for key, field := range line {
+		value := fmt.Sprintf("%s", field)
+
+		entityProps[key] = value
+
+	}
+	return entityProps, nil
 }

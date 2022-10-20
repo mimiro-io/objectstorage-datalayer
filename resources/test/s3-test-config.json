@@ -145,6 +145,32 @@
                 "refs":[],
                 "idProperty":"foo"
             }
+        },
+        {
+            "dataset": "s3-parquet-test",
+            "storageType": "S3",
+            "stripProps": true,
+            "parquet": {
+                "flushThreshold": 20,
+                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING);}"
+            },
+            "decode": {
+                "namespaces": {
+                    "a": "http://data.io/foo/bar/"
+                },
+                "propertyPrefixes": {
+                    "id": "a:a",
+                    "firstname": "a"
+                },
+                "idProperty": "id"
+            },
+            "props": {
+                "bucket": "s3-test-bucket",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
         }
     ]
 }

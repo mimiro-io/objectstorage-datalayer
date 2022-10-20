@@ -6,6 +6,7 @@ import (
 	goparquet "github.com/fraugster/parquet-go"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"io/ioutil"
 	"testing"
 	"time"
 )
@@ -211,6 +212,33 @@ func TestParquet(t *testing.T) {
 			res, err = encodeTwice(backend, entities)
 			g.Assert(err).IsNil()
 			g.Assert(len(res)).Eql(892)
+		})
+	})
+	g.Describe("The Parquet Decoder", func() {
+		g.It("Should produce a complete fixed width parquet", func() {
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"1","props":{"_:id":"1"},"refs":{}},{"deleted":false,"id":"2","props":{"_:id":"2"},"refs":{}},{"id":"@continuation","token":""}]`
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required binary id (STRING);
+					required binary key (STRING);
+				}`,
+			},
+				DecodeConfig: &conf.DecodeConfig{
+					IdProperty:       "id",
+					DefaultNamespace: "_",
+					Namespaces:       map[string]string{"_": "http://example.io/foo/"}}}
+
+			entities := []*entity.Entity{
+				{ID: "a:1", Properties: map[string]interface{}{"b:id": "1", "a:key": "value 1"}},
+				{ID: "a:2", Properties: map[string]interface{}{"b:id": "2", "a:key": "value 2"}},
+			}
+			result, err := encodeOnce(backend, entities)
+			reader, err := decodeOnce(backend, result)
+			g.Assert(err).IsNil()
+			all, err := ioutil.ReadAll(reader)
+			g.Assert(err).IsNil()
+			g.Assert(len(all)).Eql(213)
+			g.Assert(string(all)).Eql(expected)
 		})
 	})
 }
