@@ -154,7 +154,7 @@ func TestS3(t *testing.T) {
 
 			fileSize, storedContent := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			//t.Logf("stored bytes: %v", ByteCountIEC(fileSize))
-			g.Assert(int(*fileSize[0])).Eql(1356)
+			g.Assert(int(*fileSize[0])).Eql(1374)
 			g.Assert(storedContent).IsNotNil()
 
 			entities := parseToEntities(storedContent)
@@ -197,7 +197,7 @@ func TestS3(t *testing.T) {
 			fileSize, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			//t.Logf("stored bytes: %v", ByteCountIEC(fileSize))
 			g.Assert(len(fileSize)).Eql(1)
-			g.Assert(int(*fileSize[0])).Eql(1356)
+			g.Assert(int(*fileSize[0])).Eql(1374)
 		})
 		// big upload. use this to see how memory behaves
 		g.It("Should upload files in incremental as separate files", func() {
@@ -213,8 +213,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(2, "expect two files for 2 incr uploads")
-			g.Assert(int(*fileSizes[0])).Eql(452)
-			g.Assert(int(*fileSizes[1])).Eql(452)
+			g.Assert(int(*fileSizes[0])).Eql(458)
+			g.Assert(int(*fileSizes[1])).Eql(458)
 		})
 		g.It("Should not store entities with deleted = true through /changes endpoint when storeDeleted=false", func() {
 			//a1 -> deleted
@@ -318,7 +318,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-csv-mapping")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(104)
+			g.Assert(int(*fileSizes[0])).Eql(110)
 
 		})
 		g.It("Should write csv with special characters", func() {
@@ -392,11 +392,11 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-csv-mapping")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(172)
+			g.Assert(int(*fileSizes[0])).Eql(184)
 
 			fileSizes, _ = retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(904)
+			g.Assert(int(*fileSizes[0])).Eql(916)
 		})
 		g.It("Should overwrite file specified in resourceName property in fullsync", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -410,7 +410,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(452)
+			g.Assert(int(*fileSizes[0])).Eql(458)
 
 			// file 2 has only two entities
 			fileBytes, err = ioutil.ReadFile("./resources/test/data/s3-test-2.json")
@@ -492,8 +492,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(330)
-			g.Assert(int(*fileSizes[1])).Eql(330)
+			g.Assert(int(*fileSizes[0])).Eql(339)
+			g.Assert(int(*fileSizes[1])).Eql(339)
 		})
 		g.It("Should write incremental parquet files with optional values", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -510,8 +510,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(321)
-			g.Assert(int(*fileSizes[1])).Eql(321)
+			g.Assert(int(*fileSizes[0])).Eql(330)
+			g.Assert(int(*fileSizes[1])).Eql(330)
 		})
 		g.It("Should write fullsync parquet files", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -540,7 +540,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/latest")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(564)
+			g.Assert(int(*fileSizes[0])).Eql(1062)
 		})
 
 		g.It("Should export athena schemas for parquet datasets", func() {
