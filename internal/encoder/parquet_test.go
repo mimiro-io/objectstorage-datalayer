@@ -40,9 +40,6 @@ func TestParquet(t *testing.T) {
 			row, _ = pqReader.NextRow()
 			g.Assert(row["id"]).Eql(int64(2))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
-
-			//read file
-
 		})
 
 		g.It("Should process files with missing column values if field is optional", func() {
