@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"time"
 
 	goparquet "github.com/fraugster/parquet-go"
@@ -226,17 +225,14 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 
 		}
 
-		log.Print(entityProps)
 		var entityBytes []byte
 		entityProps, err = d.ParseLine(entityProps)
-
 		entityBytes, err = toEntityBytes(entityProps, d.backend)
-		log.Printf("Bytes = %s", entityBytes)
 		if err != nil {
 			return n, err
 		}
+
 		buf = append(buf, append([]byte(","), entityBytes...)...)
-		log.Printf("buf = %s", buf)
 		if n, err, done = d.flush(p, buf); done {
 			return n, err
 		}
@@ -250,11 +246,11 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 		token = d.since
 	}
 	// Add continuation token
-	entityy := map[string]interface{}{
+	continueEntity := map[string]interface{}{
 		"id":    "@continuation",
 		"token": token,
 	}
-	sinceBytes, err := json.Marshal(entityy)
+	sinceBytes, err := json.Marshal(continueEntity)
 	buf = append(buf, append([]byte(","), sinceBytes...)...)
 
 	// close json array

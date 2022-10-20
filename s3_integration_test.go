@@ -565,7 +565,6 @@ func TestS3(t *testing.T) {
 			}
 
 			g.Assert(len(fileSizes)).Eql(2)
-			t.Log(resp)
 			g.Assert(int(*fileSizes[0])).Eql(220) // changes schema
 			g.Assert(int(*fileSizes[1])).Eql(219) // latest schema
 		})
@@ -700,12 +699,10 @@ func TestS3(t *testing.T) {
 			_, _ = http.DefaultClient.Do(req)
 			retrieveFirstObjectFromS3(s3Service, "s3-test-bucket")
 			resp, err := http.Get(layerUrl + "/s3-parquet-test/changes")
-			t.Log("Status: ", resp.Status)
 			g.Assert(err).IsNil()
 
 			g.Assert(resp.StatusCode).Eql(200)
 			bodyBytes, _ := io.ReadAll(resp.Body)
-			t.Log(string(bodyBytes))
 			var entities []map[string]interface{}
 			err = json.Unmarshal(bodyBytes, &entities)
 			g.Assert(err).IsNil()
