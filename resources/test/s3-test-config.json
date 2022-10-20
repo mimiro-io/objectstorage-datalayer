@@ -147,11 +147,12 @@
             }
         },
         {
-            "dataset": "S3-parquet-test",
+            "dataset": "s3-parquet-test",
             "storageType": "S3",
             "stripProps": true,
             "parquet": {
-                "continueOnParseError": false
+                "flushThreshold": 20,
+                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING);}"
             },
             "decode": {
                 "namespaces": {
@@ -159,20 +160,16 @@
                 },
                 "propertyPrefixes": {
                     "id": "a:a",
-                    "name": "a",
-                    "breed": "a",
-                    "timestamp": "a"
+                    "firstname": "a"
                 },
                 "idProperty": "id"
             },
             "props": {
-                "customResourcePath": true,
-                "resourceName": "parquet/",
-                "bucket": "sample-bucket",
-                "key": "foo",
-                "secret": "bar",
+                "bucket": "s3-test-bucket",
+                "endpoint": "http://localhost:8888",
                 "region": "us-east-1",
-                "endpoint": "http://localhost:4566"
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
             }
         }
     ]

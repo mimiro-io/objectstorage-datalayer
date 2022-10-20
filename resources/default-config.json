@@ -1,35 +1,6 @@
 {
     "id": "storage-test",
     "storageBackends": [
-        {
-            "dataset": "S3-parquet-test",
-            "storageType": "S3",
-            "stripProps": true,
-            "parquet": {
-                "continueOnParseError": false
-            },
-            "decode": {
-                "namespaces": {
-                    "a": "http://data.io/foo/bar/"
-                },
-                "propertyPrefixes": {
-                    "id": "a:a",
-                    "name": "a",
-                    "breed": "a",
-                    "timestamp": "a"
-                },
-                "idProperty": "id"
-            },
-            "props": {
-                "customResourcePath": true,
-                "resourceName": "parquet/",
-                "bucket": "sample-bucket",
-                "key": "foo",
-                "secret": "bar",
-                "region": "us-east-1",
-                "endpoint": "http://localhost:4566"
-            }
-        }
     ],
     "storageMapping": [
 

@@ -125,7 +125,7 @@ func TestS3(t *testing.T) {
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-athena-deletedTrue\",\"type\":[\"POST\"]}")).IsTrue()
 			g.Assert(strings.Contains(body, "{\"name\":\"s3-parquet-mapping\",\"type\":[\"POST\"]}")).IsTrue()
-			g.Assert(strings.Contains(body, "{\"name\":\"S3-parquet-test\",\"type\":[\"POST\"]}")).IsTrue()
+			g.Assert(strings.Contains(body, "{\"name\":\"s3-parquet-test\",\"type\":[\"POST\"]}")).IsTrue()
 		})
 		g.It("Should upload batches larger than the json reader's batch size", func() {
 			//g.Timeout(1 * time.Hour)
@@ -154,7 +154,7 @@ func TestS3(t *testing.T) {
 
 			fileSize, storedContent := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			//t.Logf("stored bytes: %v", ByteCountIEC(fileSize))
-			g.Assert(int(*fileSize[0])).Eql(1374)
+			g.Assert(int(*fileSize[0])).Eql(1356)
 			g.Assert(storedContent).IsNotNil()
 
 			entities := parseToEntities(storedContent)
@@ -197,7 +197,7 @@ func TestS3(t *testing.T) {
 			fileSize, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			//t.Logf("stored bytes: %v", ByteCountIEC(fileSize))
 			g.Assert(len(fileSize)).Eql(1)
-			g.Assert(int(*fileSize[0])).Eql(1374)
+			g.Assert(int(*fileSize[0])).Eql(1356)
 		})
 		// big upload. use this to see how memory behaves
 		g.It("Should upload files in incremental as separate files", func() {
@@ -213,8 +213,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(2, "expect two files for 2 incr uploads")
-			g.Assert(int(*fileSizes[0])).Eql(458)
-			g.Assert(int(*fileSizes[1])).Eql(458)
+			g.Assert(int(*fileSizes[0])).Eql(452)
+			g.Assert(int(*fileSizes[1])).Eql(452)
 		})
 		g.It("Should not store entities with deleted = true through /changes endpoint when storeDeleted=false", func() {
 			//a1 -> deleted
@@ -318,7 +318,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-csv-mapping")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(110)
+			g.Assert(int(*fileSizes[0])).Eql(104)
 
 		})
 		g.It("Should write csv with special characters", func() {
@@ -392,11 +392,11 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-csv-mapping")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(184)
+			g.Assert(int(*fileSizes[0])).Eql(172)
 
 			fileSizes, _ = retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(916)
+			g.Assert(int(*fileSizes[0])).Eql(904)
 		})
 		g.It("Should overwrite file specified in resourceName property in fullsync", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -410,7 +410,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-athena")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(458)
+			g.Assert(int(*fileSizes[0])).Eql(452)
 
 			// file 2 has only two entities
 			fileBytes, err = ioutil.ReadFile("./resources/test/data/s3-test-2.json")
@@ -492,8 +492,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(339)
-			g.Assert(int(*fileSizes[1])).Eql(339)
+			g.Assert(int(*fileSizes[0])).Eql(330)
+			g.Assert(int(*fileSizes[1])).Eql(330)
 		})
 		g.It("Should write incremental parquet files with optional values", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -510,8 +510,8 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/changes")
 			g.Assert(len(fileSizes)).Eql(2)
-			g.Assert(int(*fileSizes[0])).Eql(330)
-			g.Assert(int(*fileSizes[1])).Eql(330)
+			g.Assert(int(*fileSizes[0])).Eql(321)
+			g.Assert(int(*fileSizes[1])).Eql(321)
 		})
 		g.It("Should write fullsync parquet files", func() {
 			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
@@ -540,7 +540,7 @@ func TestS3(t *testing.T) {
 
 			fileSizes, _ := retrieveFirstObjectFromS3(s3Service, "s3-parquet-mapping/latest")
 			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(1062)
+			g.Assert(int(*fileSizes[0])).Eql(564)
 		})
 
 		g.It("Should export athena schemas for parquet datasets", func() {
@@ -673,7 +673,7 @@ func TestS3(t *testing.T) {
 			// upload another flatfile to s3
 			time.Sleep(1 * time.Second) //need 1 second to get different aws timestamps
 			fileBytes, _ = ioutil.ReadFile("./resources/test/data/flatfile-changes-3.txt")
-			t.Log(fileBytes)
+			//t.Log(fileBytes)
 			_, err = uploader.Upload(&s3manager.UploadInput{
 				Bucket: aws.String("s3-test-bucket"),
 				Key:    aws.String("s3-flatfile/3.txt"),
@@ -691,55 +691,25 @@ func TestS3(t *testing.T) {
 			g.Assert(len(entities3)).Eql(5, "context, continuation and 3 changes")
 		})
 		g.It("Should upload and read parquet to S3", func() {
-			//fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
-			uploader := s3manager.NewUploaderWithClient(s3Service)
-			// upload another flatfile to s3
-			fileBytes, err := ioutil.ReadFile("./resources/test/data/latest-fullsync.parquet")
-			//t.Log(fileBytes)
-			//bytes.NewReader(fileBytes)
-
-			_, err = uploader.Upload(&s3manager.UploadInput{
-				Bucket: aws.String("s3-test-bucket"),
-				Key:    aws.String("s3-parquet/1.parquet"),
-				Body:   bytes.NewReader(fileBytes),
-			})
+			fileBytes, _ := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
+			var expected []map[string]interface{}
+			err := json.Unmarshal(fileBytes, &expected)
 			g.Assert(err).IsNil()
 
-			resp, err := http.Get(layerUrl + "/s3-parquet/entities")
+			req, _ := http.NewRequest("POST", layerUrl+"/s3-parquet-test/entities", bytes.NewReader(fileBytes))
+			_, _ = http.DefaultClient.Do(req)
+			retrieveFirstObjectFromS3(s3Service, "s3-test-bucket")
+			resp, err := http.Get(layerUrl + "/s3-parquet-test/changes")
+			t.Log("Status: ", resp.Status)
 			g.Assert(err).IsNil()
+
+			g.Assert(resp.StatusCode).Eql(200)
 			bodyBytes, _ := io.ReadAll(resp.Body)
+			t.Log(string(bodyBytes))
 			var entities []map[string]interface{}
 			err = json.Unmarshal(bodyBytes, &entities)
-			t.Log("bodybytes: ", bodyBytes)
-			t.Log("entitites: ", entities)
-			//g.Assert(err).IsNil()
-			/*g.Assert(len(entities)).Eql(5, "context, continuation and 3 changes")
-			var continuationToken string
-			for _, entity := range entities {
-				if entity["id"] == "@continuation" {
-					continuationToken = entity["token"].(string)
-				}
-			}*/
-			params := &s3.ListObjectsV2Input{
-				Bucket: aws.String("s3-test-bucket"),
-				Prefix: aws.String("schemas"),
-			}
-			res, err := s3Service.ListObjectsV2(params)
-			if err != nil {
-				fmt.Print(err)
-			}
-			var fileSizes []*int64
-			for _, key := range res.Contents {
-				getRes, _ := s3Service.GetObject(&s3.GetObjectInput{
-					Bucket: aws.String("s3-test-bucket"),
-					Key:    key.Key,
-				})
-				fileSizes = append(fileSizes, getRes.ContentLength)
-			}
+			g.Assert(err).IsNil()
 
-			g.Assert(len(fileSizes)).Eql(1)
-			g.Assert(int(*fileSizes[0])).Eql(220) // changes schema
-			g.Assert(int(*fileSizes[1])).Eql(219) // latest schema
 		})
 	})
 }

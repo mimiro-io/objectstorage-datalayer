@@ -218,7 +218,7 @@ func TestParquet(t *testing.T) {
 		})
 	})
 	g.Describe("The Parquet Decoder", func() {
-		g.It("Should ", func() {
+		g.It("Should produce a complete fixed width parquet", func() {
 			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"1","props":{"_:id":1},"refs":{}},{"deleted":false,"id":"2","props":{"_:id":2},"refs":{}},{"id":"@continuation","token":""}]`
 			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				SchemaDefinition: `message test_schema {
@@ -239,11 +239,8 @@ func TestParquet(t *testing.T) {
 			reader, err := decodeOnce(backend, result)
 			g.Assert(err).IsNil()
 			all, err := ioutil.ReadAll(reader)
-			t.Log("result: ", string(result))
-			t.Log("reader: ", reader)
-			t.Log("All: ", string(all))
 			g.Assert(err).IsNil()
-			g.Assert(len(all)).Eql(209)
+			g.Assert(len(all)).Eql(97)
 			g.Assert(string(all)).Eql(expected)
 		})
 	})

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
 	goparquet "github.com/fraugster/parquet-go"
@@ -210,28 +211,37 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 			return n, err
 		}
 	}
-	// append one entity per line, comma separated
 
+	// append one entity per line, comma separated
+	count := 0
 	for {
 		row, err := d.pqReader.NextRow()
-		//d.logger.Debugf("Got line : '%s'", line)
 		var entityProps = row
+
 		if err != nil {
 			if err.Error() == "EOF" {
 				break
 			}
 			return n, err
+
 		}
 
+		log.Print(entityProps)
 		var entityBytes []byte
+		entityProps, err = d.ParseLine(entityProps)
+
 		entityBytes, err = toEntityBytes(entityProps, d.backend)
+		log.Printf("Bytes = %s", entityBytes)
 		if err != nil {
 			return n, err
 		}
 		buf = append(buf, append([]byte(","), entityBytes...)...)
+		log.Printf("buf = %s", buf)
 		if n, err, done = d.flush(p, buf); done {
 			return n, err
 		}
+
+		count++
 	}
 	var token string
 	if d.fullSync {
@@ -240,11 +250,11 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 		token = d.since
 	}
 	// Add continuation token
-	entity := map[string]interface{}{
+	entityy := map[string]interface{}{
 		"id":    "@continuation",
 		"token": token,
 	}
-	sinceBytes, err := json.Marshal(entity)
+	sinceBytes, err := json.Marshal(entityy)
 	buf = append(buf, append([]byte(","), sinceBytes...)...)
 
 	// close json array
@@ -270,4 +280,16 @@ func (d *ParquetDecoder) flush(p []byte, buf []byte) (int, error, bool) {
 
 func (d *ParquetDecoder) Close() error {
 	return d.reader.Close()
+}
+
+func (d *ParquetDecoder) ParseLine(line map[string]interface{}) (map[string]interface{}, error) {
+	var entityProps = make(map[string]interface{}, 0)
+
+	for key, field := range line {
+		value := fmt.Sprintf("%s", field)
+
+		entityProps[key] = value
+
+	}
+	return entityProps, nil
 }

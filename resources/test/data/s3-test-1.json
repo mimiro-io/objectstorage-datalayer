@@ -13,7 +13,7 @@
             "b:address": "b:1"
         },
         "props": {
-            "a:id": "a:1",
+            "a:id": "1",
             "a:firstname": "Frank",
             "a:surname": "TheTank",
             "a:age": 41,
@@ -27,7 +27,7 @@
             "b:address": "b:1"
         },
         "props": {
-            "a:id": "a:2",
+            "a:id": "2",
             "a:firstname": "Fran",
             "a:surname": "TheTan",
             "a:age": 27,
@@ -41,7 +41,7 @@
             "b:address": "b:2"
         },
         "props": {
-            "a:id": "a:3",
+            "a:id": "3",
             "a:firstname": "Dan",
             "a:surname": "TheMan",
             "a:age": 67,
