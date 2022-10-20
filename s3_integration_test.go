@@ -672,7 +672,6 @@ func TestS3(t *testing.T) {
 			// upload another flatfile to s3
 			time.Sleep(1 * time.Second) //need 1 second to get different aws timestamps
 			fileBytes, _ = ioutil.ReadFile("./resources/test/data/flatfile-changes-3.txt")
-			//t.Log(fileBytes)
 			_, err = uploader.Upload(&s3manager.UploadInput{
 				Bucket: aws.String("s3-test-bucket"),
 				Key:    aws.String("s3-flatfile/3.txt"),
