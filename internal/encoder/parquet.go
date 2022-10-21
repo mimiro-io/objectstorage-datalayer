@@ -196,7 +196,7 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 			return n, err
 		}
 		readSeeker := bytes.NewReader(allBytes)
-		d.pqReader, err = goparquet.NewFileReader(readSeeker, "id")
+		d.pqReader, err = goparquet.NewFileReader(readSeeker)
 		if err != nil {
 			return n, err
 		}
