@@ -28,6 +28,8 @@ require (
 	go.uber.org/zap v1.23.0
 )
 
+require golang.org/x/exp v0.0.0-20221023144134-a1e5550cf13e
+
 require (
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect

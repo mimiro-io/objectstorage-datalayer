@@ -25,6 +25,7 @@ type DecodeConfig struct {
 	Refs             []string          `json:"refs"`
 	IdProperty       string            `json:"idProperty"`
 	DefaultNamespace string            `json:"defaultNamespace"`
+	IgnoreColumns    []string          `json:"ignoreColumns"`
 }
 type LocalFileConfig struct {
 	RootFolder string `json:"rootfolder"`
