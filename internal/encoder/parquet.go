@@ -280,12 +280,18 @@ func (d *ParquetDecoder) Close() error {
 
 func (d *ParquetDecoder) ParseLine(line map[string]interface{}) (map[string]interface{}, error) {
 	var entityProps = make(map[string]interface{}, 0)
-
 	for key, field := range line {
-		value := fmt.Sprintf("%s", field)
-
-		entityProps[key] = value
-
+		for _, v := range d.pqReader.GetSchemaDefinition().RootColumn.Children {
+			if key == v.SchemaElement.Name {
+				if v.SchemaElement.LogicalType != nil {
+					value := fmt.Sprintf("%s", field)
+					entityProps[key] = value
+				} else {
+					value := field
+					entityProps[key] = value
+				}
+			}
+		}
 	}
 	return entityProps, nil
 }
