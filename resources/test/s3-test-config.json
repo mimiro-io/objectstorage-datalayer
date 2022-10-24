@@ -162,7 +162,10 @@
                 "propertyPrefixes":{
                     "age": "_:_"
                 },
-                "idProperty": "age"
+                "idProperty": "age",
+                "ignoreColumns": [
+                    "__index_level_0__"
+                ]
             },
             "props": {
                 "bucket": "s3-test-bucket",

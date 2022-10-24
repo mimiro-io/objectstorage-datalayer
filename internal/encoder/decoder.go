@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
+	"golang.org/x/exp/slices"
 	"io"
 	"strings"
 )
@@ -44,7 +45,11 @@ func toEntityBytes(line map[string]interface{}, backend conf.StorageBackend) ([]
 	newProps := map[string]interface{}{}
 	newRefs := map[string]interface{}{}
 
+	ignoreColums := backend.DecodeConfig.IgnoreColumns
 	for k, v := range line {
+		if slices.Contains(ignoreColums, k) {
+			continue
+		}
 		if isRef(backend, k) {
 			withPrefix(newRefs, backend, k, v)
 		} else {
