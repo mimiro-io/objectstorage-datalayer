@@ -152,17 +152,17 @@
             "stripProps": true,
             "parquet": {
                 "flushThreshold": 20,
-                "schema": "message test_schema { required binary id (STRING); optional binary firstname (STRING);}"
+                "schema": "message test_schema { required int64 age; optional binary id (STRING);}"
             },
             "decode": {
+                "defaultNamespace": "_",
                 "namespaces": {
-                    "a": "http://data.io/foo/bar/"
+                    "_": "http://data.io/foo/bar/"
                 },
-                "propertyPrefixes": {
-                    "id": "a:a",
-                    "firstname": "a"
+                "propertyPrefixes":{
+                    "age": "_:_"
                 },
-                "idProperty": "id"
+                "idProperty": "age"
             },
             "props": {
                 "bucket": "s3-test-bucket",
