@@ -301,7 +301,7 @@ must be provided like this:
 
 #### Decoders
 
-Currently there is support for decoding ndjson (athena) formatted s3 files and fixed width flat files.
+Currently there is support for decoding ndjson (athena) formatted s3 files, fixed width flat files and parquet files.
 
 If more than one decoder is configured (*not recommended*), it will choose the first in line. (ndjson)
 
@@ -415,6 +415,19 @@ See full example including decode config:
 }
 ```
 
+##### Parquet files
+
+We support parsing parquet files where each line represents a row:
+
+To parse this, we need a `parquet` config in the storageBackends dataset entry:
+```json
+{
+    "parquet": {
+        "flushThreshold": 20,
+        "schema": "message test_schema { required int64 age; optional binary id (STRING);}"
+    }
+}
+```
 
 ### Example
 
@@ -542,9 +555,38 @@ A complete example can be found under "resources/test/test-config.json"
                 "key": "AccessKeyId",
                 "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
             }
+        },{
+            "dataset": "s3-parquet-read",
+            "storageType": "S3",
+            "stripProps": true,
+            "parquet": {
+                "flushThreshold": 20,
+                "schema": "message test_schema { required int64 age; optional binary id (STRING);}"
+            },
+            "decode": {
+                "defaultNamespace": "_",
+                "namespaces": {
+                    "_": "http://data.io/foo/bar/"
+                },
+                "idProperty": "age",
+                "ignoreColumns": [
+                    "__index_level_0__"
+                ]
+            },
+            "props": {
+                "bucket": "s3-test-bucket",
+                "endpoint": "http://localhost:8888",
+                "region": "us-east-1",
+                "key": "AccessKeyId",
+                "secret": "S3_STORAGE_SECRET_ACCESSKEYID"
+            }
         }
     ]
 }
-
-
 ```
+When reading parquet files it adds a property called ```__index_level_0__``` which is an AUTO_INCREMENT property. There is added support for removing this column. There is also support for adding muiltiple fields in the ```ignoreColumns``` list if you'd wish to filter out more fields.
+
+#### Important to notice when reading parquet files
+
+Because Parquet data needs to be decoded from the Parquet format and compression, it can’t be directly mapped from disk. Thus the memory_map option might perform better on some systems but won’t help much with resident memory consumption.
+There will therefore be a max size on the parquet file.
