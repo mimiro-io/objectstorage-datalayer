@@ -584,8 +584,8 @@ A complete example can be found under "resources/test/test-config.json"
     ]
 }
 ```
-
-When reading parquet files it add a property called ```__index_leve_0__``` which is an AUTO_INCREMENT propery. There is added support for removing this column. There is also support for adding muiltiple fields in the ```ignoreColumns``` list if yod'd wish to filter out more fields.
+"adds a property", "index_level_0", "property", "you'd"
+When reading parquet files it adds a property called ```__index_level_0__``` which is an AUTO_INCREMENT property. There is added support for removing this column. There is also support for adding muiltiple fields in the ```ignoreColumns``` list if you'd wish to filter out more fields.
 
 #### Important to notice when reading parquet files
 
