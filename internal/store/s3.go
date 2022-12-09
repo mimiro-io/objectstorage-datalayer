@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"io"
 	"sort"
 	"strconv"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
@@ -58,7 +58,8 @@ func (s3s *S3Storage) GetEntities() (io.Reader, error) {
 	if properties.ResourceName != nil {
 		if properties.CustomResourcePath != nil && *properties.CustomResourcePath {
 			//key = fmt.Sprintf("%s", *properties.ResourceName)
-			fileObjs, err := s3s.findObjects("entities")
+			since := ""
+			fileObjs, err := s3s.findObjects("entities", since)
 			if err != nil {
 				return nil, err
 			}
@@ -103,7 +104,7 @@ func (s3s *S3Storage) GetChanges(since string) (io.Reader, error) {
 	reader, writer := io.Pipe()
 	properties := s3s.config.Properties
 
-	files, err := s3s.findObjects("changes")
+	files, err := s3s.findObjects("changes", since)
 	s3s.logger.Debugf("Files found:\n%s", files)
 	if err != nil {
 		return nil, err
@@ -487,7 +488,7 @@ type FileObject struct {
 	LastModified string
 }
 
-func (s3s *S3Storage) findObjects(folder string) ([]FileObject, error) {
+func (s3s *S3Storage) findObjects(folder string, since string) ([]FileObject, error) {
 	var path string
 	if s3s.config.Properties.CustomResourcePath != nil && *s3s.config.Properties.CustomResourcePath {
 		path = *s3s.config.Properties.ResourceName
@@ -497,6 +498,9 @@ func (s3s *S3Storage) findObjects(folder string) ([]FileObject, error) {
 	params := &s3.ListObjectsV2Input{
 		Bucket: aws.String(*s3s.config.Properties.Bucket),
 		Prefix: aws.String(path),
+	}
+	if since != "" {
+		params.StartAfter = aws.String(since)
 	}
 
 	resp, err := s3s.downloader.S3.ListObjectsV2(params)
@@ -519,7 +523,7 @@ func (s3s *S3Storage) findObjects(folder string) ([]FileObject, error) {
 
 		}
 		if *resp.IsTruncated {
-			params.SetContinuationToken(*resp.ContinuationToken)
+			params.SetContinuationToken(*resp.NextContinuationToken)
 			resp, err = s3s.downloader.S3.ListObjectsV2(params)
 			if err != nil {
 				return nil, err
