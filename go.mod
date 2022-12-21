@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.108
 	github.com/bamzi/jobrunner v1.0.0
 	github.com/bcicen/jstream v1.0.1
-	github.com/containerd/containerd v1.5.13 // indirect
+	github.com/containerd/containerd v1.5.16 // indirect
 	github.com/docker/go-connections v0.4.0
 	github.com/elgohr/go-localstack v0.0.0-20220729003903-b650ea8ab53d
 	github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf
