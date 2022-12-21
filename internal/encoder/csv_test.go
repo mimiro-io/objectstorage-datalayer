@@ -2,6 +2,7 @@ package encoder_test
 
 import (
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"testing"
@@ -21,7 +22,8 @@ func TestCSV(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": "1", "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": "2", "a:key": "value 2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(result)).Eql("id,key\n1,value 1\n2,value 2\n")
 		})
@@ -37,7 +39,8 @@ func TestCSV(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": "1", "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": "2", "a:key": "value 2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(result)).Eql("1\tvalue 1\n2\tvalue 2\n")
 		})
@@ -53,7 +56,8 @@ func TestCSV(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": "1", "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": "2", "a:key": "value 2"}},
 			}
-			result, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(result)).Eql("id|key\n1|value 1\n2|value 2\n1|value 1\n2|value 2\n")
 		})

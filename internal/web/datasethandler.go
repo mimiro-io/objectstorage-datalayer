@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"net/http"
 	"net/url"
@@ -154,8 +155,8 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 		batchSize, err = strconv.Atoi(requestedBatchSize)
 	}
 
-	err = entity.ParseStream(c.Request().Body, func(entities []*entity.Entity) error {
-		err2 := storage.StoreEntitiesFullSync(state, entities)
+	err = entity.ParseStream(c.Request().Body, func(entities []*entity.Entity, entityContext *uda.Context) error {
+		err2 := storage.StoreEntitiesFullSync(state, entities, entityContext)
 		if err2 != nil {
 			return err2
 		}
@@ -171,7 +172,7 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 
 	if finalState.End {
 		defer dh.storages.Close(datasetName)
-		err := storage.StoreEntitiesFullSync(finalState, nil)
+		err := storage.StoreEntitiesFullSync(finalState, nil, nil)
 		if err != nil {
 			dh.logger.Errorw(err.Error(), "err", err, "dataset", datasetName)
 			return echo.NewHTTPError(http.StatusBadRequest, errors.New("error in StoreEntitiesFullSync").Error())
@@ -199,9 +200,9 @@ func (dh *datasetHandler) datasetStore(c echo.Context) error {
 	// parse it
 	batchSize := 10000
 
-	err = entity.ParseStream(c.Request().Body, func(entities []*entity.Entity) error {
+	err = entity.ParseStream(c.Request().Body, func(entities []*entity.Entity, entityContext *uda.Context) error {
 		// filter if storeDeleted is false
-		err2 := storage.StoreEntities(entities)
+		err2 := storage.StoreEntities(entities, entityContext)
 
 		if err2 != nil {
 			return err2

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/uuid"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	_ "github.com/spf13/cast"
 	"io"
@@ -77,11 +78,11 @@ func (ls *LocalStorage) GetConfig() conf.StorageBackend {
 	return ls.config
 }
 
-func (ls *LocalStorage) StoreEntities(entities []*entity.Entity) error {
+func (ls *LocalStorage) StoreEntities(entities []*entity.Entity, entityContext *uda.Context) error {
 	if len(entities) == 0 {
 		return nil
 	}
-	content, err := GenerateContent(entities, ls.config, ls.logger)
+	content, err := GenerateContent(entities, entityContext, ls.config, ls.logger)
 	if err != nil {
 		ls.logger.Error("Unable to create store content")
 	}
@@ -95,11 +96,11 @@ func (ls *LocalStorage) StoreEntities(entities []*entity.Entity) error {
 	ls.logger.Info("Successfully uploaded to testingnotworking")
 	return nil
 }
-func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity, entityContext *uda.Context) error {
 	if len(entities) == 0 {
 		return nil
 	}
-	content, err := GenerateContent(entities, ls.config, ls.logger)
+	content, err := GenerateContent(entities, entityContext, ls.config, ls.logger)
 	if err != nil {
 		ls.logger.Error("Unable to create store content")
 	}

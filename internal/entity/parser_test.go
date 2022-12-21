@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"os"
 	"strings"
 	"testing"
@@ -17,7 +18,7 @@ func TestParseStream(t *testing.T) {
 			g.Assert(err).IsNil()
 			var recorded []*Entity
 			var recordCnt int
-			err = ParseStream(file, func(entities []*Entity) error {
+			err = ParseStream(file, func(entities []*Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				recordCnt++
 				return nil
@@ -32,7 +33,7 @@ func TestParseStream(t *testing.T) {
 			g.Assert(err).IsNil()
 			var recorded []*Entity
 			var recordCnt int
-			err = ParseStream(file, func(entities []*Entity) error {
+			err = ParseStream(file, func(entities []*Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				recordCnt++
 				return nil
@@ -44,7 +45,7 @@ func TestParseStream(t *testing.T) {
 		})
 		g.It("Should handle empty input", func() {
 			var recorded []*Entity
-			err := ParseStream(bytes.NewReader(nil), func(entities []*Entity) error {
+			err := ParseStream(bytes.NewReader(nil), func(entities []*Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				return nil
 			}, 1000, false)
@@ -64,7 +65,7 @@ func TestParseStream(t *testing.T) {
 				var seen bool
 				err := ParseStream(strings.NewReader(fmt.Sprintf(tpl,
 					`,{"id": "1", "foo": "bar"}`,
-				)), func(entities []*Entity) error {
+				)), func(entities []*Entity, entityContext *uda.Context) error {
 					parsed = entities[0]
 					seen = true
 					return nil
@@ -86,7 +87,7 @@ func TestParseStream(t *testing.T) {
                                "foo": { "bar": null},
                                "ok": "value"
                            }}`,
-				)), func(entities []*Entity) error {
+				)), func(entities []*Entity, entityContext *uda.Context) error {
 					parsed = entities[0]
 					seen = true
 					return nil

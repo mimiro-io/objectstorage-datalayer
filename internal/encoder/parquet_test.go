@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/franela/goblin"
 	goparquet "github.com/fraugster/parquet-go"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"io/ioutil"
@@ -25,7 +26,8 @@ func TestParquet(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": 1, "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": 2, "a:key": "value 2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(348)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key")
@@ -55,7 +57,8 @@ func TestParquet(t *testing.T) {
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": 2, "a:key": "value 2", "a:name": "Bob"}},
 				{ID: "a:3", Properties: map[string]interface{}{"b:id": 3, "a:key": "value 3", "a:name": nil}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(473)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "name")
@@ -91,7 +94,8 @@ func TestParquet(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": 1, "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": 2, "a:key": "value 2"}},
 			}
-			result, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(348)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key")
@@ -166,7 +170,8 @@ func TestParquet(t *testing.T) {
 						"a:i": 5000,*/
 				}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(1239)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "abool", "aint32", "aint64", "afloat", "adouble", "abytes",
@@ -203,15 +208,92 @@ func TestParquet(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": 1, "a:key": "AAAAAAALKJASLDKJDLAKJSLDJALSDJALSKDJLAJSDLKJAALSKDJALSDJLASJKDADLKJALSJKDLKAJSD"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": 2, "a:key": "asodfij askdjf aølsdji føalskjdf ølaskjd følaksjd følkjas dløfj elkajweløkfja slødjkf"}},
 			}
-			res, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			res, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(res)).Eql(489)
 
 			// 100 byte threshold should result in separate rowgroup per write - therefore larger file
 			backend.ParquetConfig.FlushThreshold = 100
-			res, err = encodeTwice(backend, entities)
+			res, err = encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(res)).Eql(892)
+		})
+
+		g.It("Should produce parquet file with resolved refs", func() {
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required int64 id;
+					required binary key (STRING);
+					required binary ref (STRING);
+				}`,
+			},
+				ResolveNamespace: true}
+			entities := []*entity.Entity{
+				{ID: "a:1",
+					Properties: map[string]interface{}{"b:id": 1, "a:key": "value 1"},
+					References: map[string]interface{}{"a:ref": "ns10:123"}},
+				{ID: "a:2",
+					Properties: map[string]interface{}{"b:id": 2, "a:key": "value 2"},
+					References: map[string]interface{}{"a:ref": "ns10:456"}},
+			}
+			entityContext := uda.Context{ID: "@context",
+				Namespaces: map[string]string{"ns10": "http://data.example.io/"}}
+			result, err := encodeOnce(backend, entities, &entityContext)
+			g.Assert(err).IsNil()
+			g.Assert(len(result)).Eql(488)
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "ref")
+			g.Assert(err).IsNil()
+			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
+
+			g.Assert(pqReader.NumRows()).Eql(int64(2))
+			row, _ := pqReader.NextRow()
+			g.Assert(row["id"]).Eql(int64(1))
+			g.Assert(row["key"]).Eql([]byte("value 1"))
+			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/123"))
+
+			row, _ = pqReader.NextRow()
+			g.Assert(row["id"]).Eql(int64(2))
+			g.Assert(row["key"]).Eql([]byte("value 2"))
+			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/456"))
+		})
+
+		g.It("Should produce parquet file with resolved id", func() {
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required binary ID (STRING);
+					required binary key (STRING);
+					required binary ref (STRING);
+				}`,
+			},
+				ResolveNamespace: true}
+			entities := []*entity.Entity{
+				{ID: "ns10:1",
+					Properties: map[string]interface{}{"a:key": "value 1"},
+					References: map[string]interface{}{"a:ref": "ns10:123"}},
+				{ID: "ns10:2",
+					Properties: map[string]interface{}{"a:key": "value 2"},
+					References: map[string]interface{}{"a:ref": "ns10:456"}},
+			}
+			entityContext := uda.Context{ID: "@context",
+				Namespaces: map[string]string{"ns10": "http://data.example.io/"}}
+			result, err := encodeOnce(backend, entities, &entityContext)
+			g.Assert(err).IsNil()
+			g.Assert(len(result)).Eql(471)
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "ID", "key", "ref")
+			g.Assert(err).IsNil()
+			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
+
+			g.Assert(pqReader.NumRows()).Eql(int64(2))
+			row, _ := pqReader.NextRow()
+			g.Assert(row["ID"]).Eql([]byte("http://data.example.io/1"))
+			g.Assert(row["key"]).Eql([]byte("value 1"))
+			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/123"))
+
+			row, _ = pqReader.NextRow()
+			g.Assert(row["ID"]).Eql([]byte("http://data.example.io/2"))
+			g.Assert(row["key"]).Eql([]byte("value 2"))
+			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/456"))
 		})
 	})
 	g.Describe("The Parquet Decoder", func() {
@@ -232,7 +314,8 @@ func TestParquet(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"b:id": "1", "a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"b:id": "2", "a:key": "value 2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			reader, err := decodeOnce(backend, result)
 			g.Assert(err).IsNil()
 			all, err := ioutil.ReadAll(reader)

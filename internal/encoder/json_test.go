@@ -3,6 +3,7 @@ package encoder_test
 import (
 	"encoding/json"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"testing"
@@ -17,7 +18,8 @@ func TestJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			var m []map[string]interface{}
 			err = json.Unmarshal(result, &m)
@@ -33,7 +35,8 @@ func TestJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "v1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "v2"}},
 			}
-			result, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			var m []map[string]interface{}
 			err = json.Unmarshal(result, &m)
@@ -49,7 +52,8 @@ func TestJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "v1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "v2"}},
 			}
-			result, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			result, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			var m []map[string]interface{}
 			err = json.Unmarshal(result, &m)

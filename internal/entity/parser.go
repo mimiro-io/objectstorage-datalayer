@@ -2,18 +2,22 @@ package entity
 
 import (
 	"github.com/bcicen/jstream"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"strconv"
 )
 
-func ParseStream(reader io.Reader, emitEntities func(entities []*Entity) error, batchSize int, storeDeleted bool) error {
+func ParseStream(reader io.Reader, emitEntities func(entities []*Entity, entityContext *uda.Context) error, batchSize int, storeDeleted bool) error {
 	decoder := jstream.NewDecoder(reader, 1)
 	isFirst := true
 	read := 0
 	entities := make([]*Entity, 0)
+	var entityContext *uda.Context
 
 	for mv := range decoder.Stream() {
 		if isFirst {
+			ec := uda.AsContext(mv)
+			entityContext = ec
 			isFirst = false
 		} else {
 			entity := asEntity(mv, storeDeleted)
@@ -24,7 +28,7 @@ func ParseStream(reader io.Reader, emitEntities func(entities []*Entity) error, 
 			if read == batchSize {
 				read = 0
 				// do stuff with entities
-				err := emitEntities(entities)
+				err := emitEntities(entities, entityContext)
 				if err != nil {
 					return err
 				}
@@ -35,7 +39,7 @@ func ParseStream(reader io.Reader, emitEntities func(entities []*Entity) error, 
 
 	if read > 0 {
 		// do stuff with leftover entities
-		err := emitEntities(entities)
+		err := emitEntities(entities, entityContext)
 		if err != nil {
 			return err
 		}

@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
+	"strings"
 	"time"
 
 	goparquet "github.com/fraugster/parquet-go"
@@ -47,7 +49,7 @@ func (enc *ParquetEncoder) Close() error {
 	return enc.writer.Close()
 }
 
-func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *ParquetEncoder) Write(entities []*entity.Entity, entityContext *uda.Context) (int, error) {
 	if !enc.open {
 		err := enc.Open()
 		if err != nil {
@@ -56,10 +58,40 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 	}
 
 	for _, e := range entities {
-		props := propStripper(e)
+		props := keyStripper(e, "props")
+		refs := keyStripper(e, "refs")
 		row := make(map[string]interface{})
 		for _, c := range enc.schemaDef.RootColumn.Children {
+			if c.SchemaElement.Name == "ID" {
+				id := e.ID
+				if enc.backend.ResolveNamespace {
+					id = uda.ToURI(entityContext, id)
+				}
+				i, err := convertType(id, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
 			val, ok := props[c.SchemaElement.Name]
+			if !ok {
+				val, ok = refs[c.SchemaElement.Name]
+				if ok && val != nil {
+					if enc.backend.ResolveNamespace {
+						switch val.(type) {
+						case []interface{}:
+							var values []string
+							for _, value := range val.([]interface{}) {
+								values = append(values, uda.ToURI(entityContext, value.(string)))
+							}
+							val = strings.Join(values, ",")
+						default:
+							val = uda.ToURI(entityContext, val.(string))
+						}
+					}
+				}
+			}
 			if ok && val != nil {
 				i, err := convertType(val, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {

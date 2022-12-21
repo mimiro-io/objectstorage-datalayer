@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"sort"
 	"strconv"
@@ -233,11 +234,11 @@ func (s3s *S3Storage) GetConfig() conf.StorageBackend {
 	return s3s.config
 }
 
-func (s3s *S3Storage) StoreEntities(entities []*entity.Entity) error {
+func (s3s *S3Storage) StoreEntities(entities []*entity.Entity, entityContext *uda.Context) error {
 	if len(entities) == 0 {
 		return nil
 	}
-	content, err := GenerateContent(entities, s3s.config, s3s.logger)
+	content, err := GenerateContent(entities, entityContext, s3s.config, s3s.logger)
 	if err != nil {
 		s3s.logger.Error("Unable to create store content")
 	}
@@ -318,7 +319,7 @@ func (s3s *S3Storage) createKey(entities []*entity.Entity, fullSync bool) string
 
 var fullsyncTimeoutDuration = 30 * time.Minute
 
-func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity, entityContext *uda.Context) error {
 	if state.Start {
 		s3s.fullsyncId = state.Id
 		var pipeWriter *io.PipeWriter
@@ -402,7 +403,7 @@ func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*ent
 					_ = s3s.writer.CloseWithError(writeCtx.Err())
 				}
 			}()
-			written, err := s3s.writer.Write(entities)
+			written, err := s3s.writer.Write(entities, entityContext)
 			writecancel()
 			if err != nil {
 				return err

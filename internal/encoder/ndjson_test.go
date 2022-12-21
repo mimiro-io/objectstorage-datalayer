@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"io/ioutil"
@@ -20,7 +21,8 @@ func TestNDJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}
@@ -41,7 +43,8 @@ func TestNDJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}
@@ -63,7 +66,8 @@ func TestNDJson(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}

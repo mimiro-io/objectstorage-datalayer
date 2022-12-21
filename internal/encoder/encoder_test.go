@@ -1,6 +1,7 @@
 package encoder_test
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
@@ -9,15 +10,15 @@ import (
 	"io/ioutil"
 )
 
-func encodeTwice(backend conf.StorageBackend, entities []*entity.Entity) ([]byte, error) {
+func encodeTwice(backend conf.StorageBackend, entities []*entity.Entity, entityContext *uda.Context) ([]byte, error) {
 	reader, writer := io.Pipe()
 	enc := encoder.NewEntityEncoder(backend, writer, zap.NewNop().Sugar())
 	go func() {
-		_, err := enc.Write(entities)
+		_, err := enc.Write(entities, entityContext)
 		if err != nil {
 			_ = enc.CloseWithError(err)
 		}
-		_, err = enc.Write(entities)
+		_, err = enc.Write(entities, entityContext)
 		if err != nil {
 			_ = enc.CloseWithError(err)
 			return
@@ -29,11 +30,11 @@ func encodeTwice(backend conf.StorageBackend, entities []*entity.Entity) ([]byte
 
 }
 
-func encodeOnce(backend conf.StorageBackend, entities []*entity.Entity) ([]byte, error) {
+func encodeOnce(backend conf.StorageBackend, entities []*entity.Entity, entityContext *uda.Context) ([]byte, error) {
 	reader, writer := io.Pipe()
 	enc := encoder.NewEntityEncoder(backend, writer, zap.NewNop().Sugar())
 	go func() {
-		_, err := enc.Write(entities)
+		_, err := enc.Write(entities, entityContext)
 		if err != nil {
 			_ = enc.CloseWithError(err)
 			return

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"log"
 	"net/url"
@@ -49,13 +50,15 @@ func (azStorage *AzureStorage) GetConfig() conf.StorageBackend {
 	return azStorage.config
 }
 
-func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity) error {
+func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity, entityContext *uda.Context) error {
 	azStorage.logger.Debugf("Got: %d entities", len(entities))
 	tags := []string{
 		"datalayer",
 		"azure",
 		azStorage.dataset,
 	}
+
+	content, err := GenerateContent(entities, entityContext, azStorage.config, azStorage.logger)
 
 	start := time.Now()
 	defer func() {
@@ -69,12 +72,12 @@ func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity) error {
 	}
 
 	credential, err := azStorage.azureBlobCredentials()
-	if err != nil {
-		azStorage.logger.Errorf("Invalid credentials with error: " + err.Error())
-		return err
-	}
+	//if err != nil {
+	//	azStorage.logger.Errorf("Invalid credentials with error: " + err.Error())
+	//	return err
+	//}
 
-	content, err := GenerateContent(entities, azStorage.config, azStorage.logger)
+	//content, err := GenerateContent(entities, entityContext, azStorage.config, azStorage.logger)
 	if err != nil {
 		azStorage.logger.Errorf("Unable to create stores content")
 		return err
@@ -85,7 +88,7 @@ func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity) error {
 	return err
 }
 
-func (azStorage *AzureStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (azStorage *AzureStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity, entityContext *uda.Context) error {
 	return errors.New("fullsync not supported for Azure")
 }
 

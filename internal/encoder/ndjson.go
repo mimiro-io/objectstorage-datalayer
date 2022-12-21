@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
@@ -17,7 +18,7 @@ type NDJsonEncoder struct {
 	logger  *zap.SugaredLogger
 }
 
-func (enc *NDJsonEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *NDJsonEncoder) Write(entities []*entity.Entity, entityContext *uda.Context) (int, error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}

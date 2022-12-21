@@ -3,6 +3,7 @@ package encoder
 import (
 	"encoding/csv"
 	"encoding/json"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
@@ -22,7 +23,7 @@ func (enc *CsvEncoder) Close() error {
 	return enc.writer.Close()
 }
 
-func (enc *CsvEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *CsvEncoder) Write(entities []*entity.Entity, entityContext *uda.Context) (int, error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}

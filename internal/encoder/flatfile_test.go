@@ -3,6 +3,7 @@ package encoder_test
 import (
 	"encoding/json"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"io/ioutil"
@@ -17,13 +18,14 @@ func TestFlatFile(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
 			expected := []byte("99aaa\n88bbb\n")
 
 			config := `{"flatFile":{"fieldOrder":["foo","bar"],"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]]}}}}`
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
@@ -32,13 +34,14 @@ func TestFlatFile(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "9", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
 			expected := []byte("9 aaa\n88bbb\n")
 
 			config := `{"flatFile":{"fieldOrder":["foo","bar"],"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]]}}}}`
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
@@ -47,13 +50,14 @@ func TestFlatFile(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
 			expected := []byte("99aa\n88bb\n")
 
 			config := `{"flatFile":{"fieldOrder":["foo","bar"],"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,4]]}}}}`
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
@@ -63,13 +67,14 @@ func TestFlatFile(t *testing.T) {
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bår": "Ñ¢a"}},
 				{ID: "a:3", Properties: map[string]interface{}{"a:foo": "77", "a:bår": "§"}},
 			}
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
 			expected := "99aå\n88Ñ¢\n77§ \n"
 
 			config := `{"flatFile":{"fieldOrder":["foo","bår"],"fields":{"foo":{"substring":[[0,2]]},"bår":{"substring":[[2,4]]}}}}`
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(expected)
 		})
@@ -78,13 +83,14 @@ func TestFlatFile(t *testing.T) {
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa", "a:date": "2021-11-05T00:00:00Z"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb", "a:date": "2021-12-05T00:00:00Z"}},
 			}
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
 			expected := []byte("99aaa20211105\n88bbb20211205\n")
 
 			config := `{"flatFile":{"fieldOrder":["foo","bar","date"],"fields":{"foo":{"substring":[[0,2]]},"bar":{"substring":[[2,5]]},"date":{"substring":[[5,13]],"type":"date","dateLayout":"20060102"}}}}`
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
