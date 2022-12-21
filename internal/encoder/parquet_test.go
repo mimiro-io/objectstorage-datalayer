@@ -295,6 +295,45 @@ func TestParquet(t *testing.T) {
 			g.Assert(row["key"]).Eql([]byte("value 2"))
 			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/456"))
 		})
+
+		g.It("Should produce parquet file with delete flag", func() {
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required binary ID (STRING);
+					required binary key (STRING);
+					required boolean IsDeleted;
+				}`,
+			}}
+			entities := []*entity.Entity{
+				{ID: "ns10:1",
+					Properties: map[string]interface{}{"a:key": "value 1"},
+					IsDeleted:  false,
+				},
+				{ID: "ns10:2",
+					Properties: map[string]interface{}{"a:key": "value 2"},
+					IsDeleted:  true,
+				},
+			}
+			entityContext := uda.Context{ID: "@context",
+				Namespaces: map[string]string{"ns10": "http://data.example.io/"}}
+			result, err := encodeOnce(backend, entities, &entityContext)
+			g.Assert(err).IsNil()
+			g.Assert(len(result)).Eql(403)
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "ID", "key", "IsDeleted")
+			g.Assert(err).IsNil()
+			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
+
+			g.Assert(pqReader.NumRows()).Eql(int64(2))
+			row, _ := pqReader.NextRow()
+			g.Assert(row["ID"]).Eql([]byte("ns10:1"))
+			g.Assert(row["key"]).Eql([]byte("value 1"))
+			g.Assert(row["IsDeleted"]).Eql(false)
+
+			row, _ = pqReader.NextRow()
+			g.Assert(row["ID"]).Eql([]byte("ns10:2"))
+			g.Assert(row["key"]).Eql([]byte("value 2"))
+			g.Assert(row["IsDeleted"]).Eql(true)
+		})
 	})
 	g.Describe("The Parquet Decoder", func() {
 		g.It("Should produce a complete fixed width parquet", func() {

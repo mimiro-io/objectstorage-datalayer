@@ -74,6 +74,14 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity, entityContext *uda.C
 				row[c.SchemaElement.Name] = i
 			}
 
+			if c.SchemaElement.Name == "IsDeleted" {
+				i, err := convertType(e.IsDeleted, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
 			val, ok := props[c.SchemaElement.Name]
 			if !ok {
 				val, ok = refs[c.SchemaElement.Name]
