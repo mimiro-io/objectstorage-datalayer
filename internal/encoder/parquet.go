@@ -61,14 +61,6 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 		refs := uda.StripRefs(e)
 		row := make(map[string]interface{})
 		for _, c := range enc.schemaDef.RootColumn.Children {
-			if c.SchemaElement.Name == "ID" {
-				i, err := convertType(e.ID, c.SchemaElement.Type, c.SchemaElement.LogicalType)
-				if err != nil {
-					return 0, err
-				}
-				row[c.SchemaElement.Name] = i
-			}
-
 			if c.SchemaElement.Name == "deleted" {
 				i, err := convertType(e.IsDeleted, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {
@@ -103,6 +95,15 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 			}
 			if ok && val != nil {
 				i, err := convertType(val, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
+			_, ok = row[c.SchemaElement.Name]
+			if c.SchemaElement.Name == "id" && !ok { // Allows for overriding entity id with id in props
+				i, err := convertType(e.ID, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {
 					return 0, err
 				}

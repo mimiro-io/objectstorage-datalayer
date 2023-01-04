@@ -299,6 +299,14 @@ must be provided like this:
   }
 }
 ```
+By default when id is defined in the schema, it will use the entity id. This can be overridden by adding a property called `id`. 
+_When using the default entity id, the schema type must be string as entity ids, will always be strings:_
+
+```
+message test_schema {
+    required binary id (STRING);
+}
+```
 
 #### Decoders
 

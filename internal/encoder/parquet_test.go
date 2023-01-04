@@ -260,7 +260,7 @@ func TestParquet(t *testing.T) {
 		g.It("Should produce parquet file with resolved id", func() {
 			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				SchemaDefinition: `message test_schema {
-					required binary ID (STRING);
+					required binary id (STRING);
 					required binary key (STRING);
 					required binary ref (STRING);
 				}`,
@@ -279,18 +279,18 @@ func TestParquet(t *testing.T) {
 			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(471)
-			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "ID", "key", "ref")
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "ref")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
 
 			g.Assert(pqReader.NumRows()).Eql(int64(2))
 			row, _ := pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("http://data.example.io/1"))
+			g.Assert(row["id"]).Eql([]byte("http://data.example.io/1"))
 			g.Assert(row["key"]).Eql([]byte("value 1"))
 			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/123"))
 
 			row, _ = pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("http://data.example.io/2"))
+			g.Assert(row["id"]).Eql([]byte("http://data.example.io/2"))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
 			g.Assert(row["ref"]).Eql([]byte("http://data.example.io/456"))
 		})
@@ -298,7 +298,7 @@ func TestParquet(t *testing.T) {
 		g.It("Should produce parquet file with delete flag", func() {
 			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				SchemaDefinition: `message test_schema {
-					required binary ID (STRING);
+					required binary id (STRING);
 					required binary key (STRING);
 					required boolean deleted;
 				}`,
@@ -318,18 +318,18 @@ func TestParquet(t *testing.T) {
 			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(399)
-			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "ID", "key", "deleted")
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "deleted")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
 
 			g.Assert(pqReader.NumRows()).Eql(int64(2))
 			row, _ := pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("ns10:1"))
+			g.Assert(row["id"]).Eql([]byte("ns10:1"))
 			g.Assert(row["key"]).Eql([]byte("value 1"))
 			g.Assert(row["deleted"]).Eql(false)
 
 			row, _ = pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("ns10:2"))
+			g.Assert(row["id"]).Eql([]byte("ns10:2"))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
 			g.Assert(row["deleted"]).Eql(true)
 		})
@@ -337,7 +337,7 @@ func TestParquet(t *testing.T) {
 		g.It("Should produce parquet file with recorded timestamp", func() {
 			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				SchemaDefinition: `message test_schema {
-					required binary ID (STRING);
+					required binary id (STRING);
 					required binary key (STRING);
 					required binary recorded (STRING);
 				}`,
@@ -357,18 +357,18 @@ func TestParquet(t *testing.T) {
 			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(len(result)).Eql(473)
-			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "ID", "key", "recorded")
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "recorded")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
 
 			g.Assert(pqReader.NumRows()).Eql(int64(2))
 			row, _ := pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("ns10:1"))
+			g.Assert(row["id"]).Eql([]byte("ns10:1"))
 			g.Assert(row["key"]).Eql([]byte("value 1"))
 			g.Assert(row["recorded"]).Eql([]byte("1666349374523225600"))
 
 			row, _ = pqReader.NextRow()
-			g.Assert(row["ID"]).Eql([]byte("ns10:2"))
+			g.Assert(row["id"]).Eql([]byte("ns10:2"))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
 			g.Assert(row["recorded"]).Eql([]byte("1660804179145791488"))
 		})
