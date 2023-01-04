@@ -1,17 +1,20 @@
 package encoder_test
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 )
 
-func encodeTwice(backend conf.StorageBackend, entities []*entity.Entity) ([]byte, error) {
+func encodeTwice(backend conf.StorageBackend, entities []*uda.Entity, entityContext *uda.Context) ([]byte, error) {
 	reader, writer := io.Pipe()
 	enc := encoder.NewEntityEncoder(backend, writer, zap.NewNop().Sugar())
+	if backend.ResolveNamespace {
+		entities = uda.ExpandUris(entities, entityContext)
+	}
 	go func() {
 		_, err := enc.Write(entities)
 		if err != nil {
@@ -29,9 +32,12 @@ func encodeTwice(backend conf.StorageBackend, entities []*entity.Entity) ([]byte
 
 }
 
-func encodeOnce(backend conf.StorageBackend, entities []*entity.Entity) ([]byte, error) {
+func encodeOnce(backend conf.StorageBackend, entities []*uda.Entity, entityContext *uda.Context) ([]byte, error) {
 	reader, writer := io.Pipe()
 	enc := encoder.NewEntityEncoder(backend, writer, zap.NewNop().Sugar())
+	if backend.ResolveNamespace {
+		entities = uda.ExpandUris(entities, entityContext)
+	}
 	go func() {
 		_, err := enc.Write(entities)
 		if err != nil {

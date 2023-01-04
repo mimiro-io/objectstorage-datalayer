@@ -2,8 +2,8 @@ package store
 
 import (
 	"errors"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 )
@@ -26,12 +26,12 @@ func (consoleStorage *ConsoleStorage) GetConfig() conf.StorageBackend {
 	return consoleStorage.config
 }
 
-func (consoleStorage *ConsoleStorage) StoreEntities(entities []*entity.Entity) error {
+func (consoleStorage *ConsoleStorage) StoreEntities(entities []*uda.Entity) error {
 	consoleStorage.Logger.Info("Console stores")
 	consoleStorage.Logger.Infof("Got: %d entities", len(entities))
 	return nil
 }
 
-func (consoleStorage *ConsoleStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (consoleStorage *ConsoleStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {
 	return errors.New("fullsync not supported to console")
 }

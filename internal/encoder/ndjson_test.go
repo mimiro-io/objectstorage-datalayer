@@ -5,8 +5,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"io/ioutil"
 	"testing"
 )
@@ -16,11 +16,12 @@ func TestNDJson(t *testing.T) {
 	g.Describe("The NDJson Encoder", func() {
 		g.It("Should produce ndjson with complete entities from single batch", func() {
 			backend := conf.StorageBackend{AthenaCompatible: true}
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}
@@ -37,11 +38,12 @@ func TestNDJson(t *testing.T) {
 
 		g.It("Should produce ndjson with props only if asked to", func() {
 			backend := conf.StorageBackend{AthenaCompatible: true, StripProps: true}
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}
@@ -59,11 +61,12 @@ func TestNDJson(t *testing.T) {
 
 		g.It("Should produce ndjson from multiple batches", func() {
 			backend := conf.StorageBackend{AthenaCompatible: true, StripProps: true}
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:key": "value 1"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:key": "value 2"}},
 			}
-			readResult, err := encodeTwice(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeTwice(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			scanner := bufio.NewScanner(bytes.NewReader(readResult))
 			var result []map[string]interface{}

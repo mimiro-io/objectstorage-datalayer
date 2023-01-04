@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/google/uuid"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	_ "github.com/spf13/cast"
 	"io"
 	"os"
@@ -77,7 +77,7 @@ func (ls *LocalStorage) GetConfig() conf.StorageBackend {
 	return ls.config
 }
 
-func (ls *LocalStorage) StoreEntities(entities []*entity.Entity) error {
+func (ls *LocalStorage) StoreEntities(entities []*uda.Entity) error {
 	if len(entities) == 0 {
 		return nil
 	}
@@ -95,7 +95,7 @@ func (ls *LocalStorage) StoreEntities(entities []*entity.Entity) error {
 	ls.logger.Info("Successfully uploaded to testingnotworking")
 	return nil
 }
-func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {
 	if len(entities) == 0 {
 		return nil
 	}
@@ -114,7 +114,7 @@ func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*e
 	return nil
 }
 
-func (ls *LocalStorage) createKey(entities []*entity.Entity, fullSync bool) string {
+func (ls *LocalStorage) createKey(entities []*uda.Entity, fullSync bool) string {
 	t := "changes"
 	if fullSync {
 		t = "entities"

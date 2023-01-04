@@ -10,6 +10,7 @@ type StorageBackend struct {
 	Dataset          string            `json:"dataset"`
 	StorageType      string            `json:"storageType"`
 	StripProps       bool              `json:"stripProps"`
+	ResolveNamespace bool              `json:"resolveNamespace"`
 	StoreDeleted     bool              `json:"storeDeleted"`
 	AthenaCompatible bool              `json:"athenaCompatible"`
 	CsvConfig        *CsvConfig        `json:"csv"`

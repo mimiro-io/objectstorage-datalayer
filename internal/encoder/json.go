@@ -2,8 +2,8 @@ package encoder
 
 import (
 	"encoding/json"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 )
@@ -25,7 +25,7 @@ func (enc *JSONEncoder) Close() error {
 	return enc.writer.Close()
 }
 
-func (enc *JSONEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *JSONEncoder) Write(entities []*uda.Entity) (int, error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
@@ -49,7 +49,7 @@ func (enc *JSONEncoder) CloseWithError(err error) error {
 	return enc.writer.CloseWithError(err)
 }
 
-func (enc *JSONEncoder) encode(entities []*entity.Entity) (int, error) {
+func (enc *JSONEncoder) encode(entities []*uda.Entity) (int, error) {
 	written := 0
 	for _, e := range entities {
 		if enc.firstEntityWritten {

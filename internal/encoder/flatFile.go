@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 	"strconv"
@@ -22,7 +22,7 @@ type FlatFileEncoder struct {
 	logger  *zap.SugaredLogger
 }
 
-func (enc *FlatFileEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *FlatFileEncoder) Write(entities []*uda.Entity) (int, error) {
 	if len(entities) == 0 {
 		return 0, nil
 	}
@@ -43,7 +43,7 @@ func (enc *FlatFileEncoder) CloseWithError(err error) error {
 	return enc.writer.CloseWithError(err)
 }
 
-func (enc *FlatFileEncoder) encode(entities []*entity.Entity) ([]byte, error) {
+func (enc *FlatFileEncoder) encode(entities []*uda.Entity) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	fields := enc.backend.FlatFileConfig.Fields
 	if fields == nil {

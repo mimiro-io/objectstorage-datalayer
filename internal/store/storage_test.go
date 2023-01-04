@@ -1,15 +1,15 @@
 package store
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"testing"
 )
 
 func TestConsoleStorage_StoreEntities(t *testing.T) {
-	entities := []*entity.Entity{
-		entity.NewEntity(),
+	entities := []*uda.Entity{
+		uda.NewEntity(),
 	}
 
 	env := &conf.Env{

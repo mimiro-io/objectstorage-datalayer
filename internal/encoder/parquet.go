@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
+	"strings"
 	"time"
 
 	goparquet "github.com/fraugster/parquet-go"
@@ -15,7 +17,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 )
 
 type ParquetEncoder struct {
@@ -47,7 +48,7 @@ func (enc *ParquetEncoder) Close() error {
 	return enc.writer.Close()
 }
 
-func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
+func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 	if !enc.open {
 		err := enc.Open()
 		if err != nil {
@@ -56,10 +57,50 @@ func (enc *ParquetEncoder) Write(entities []*entity.Entity) (int, error) {
 	}
 
 	for _, e := range entities {
-		props := propStripper(e)
+		props := uda.StripProps(e)
+		refs := uda.StripRefs(e)
 		row := make(map[string]interface{})
 		for _, c := range enc.schemaDef.RootColumn.Children {
+			if c.SchemaElement.Name == "ID" {
+				i, err := convertType(e.ID, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
+			if c.SchemaElement.Name == "deleted" {
+				i, err := convertType(e.IsDeleted, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
+			if c.SchemaElement.Name == "recorded" {
+				i, err := convertType(e.Recorded, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				if err != nil {
+					return 0, err
+				}
+				row[c.SchemaElement.Name] = i
+			}
+
 			val, ok := props[c.SchemaElement.Name]
+			if !ok {
+				val, ok = refs[c.SchemaElement.Name]
+				if ok && val != nil {
+					switch val.(type) {
+					case []any:
+						var values []string
+						for _, value := range val.([]any) {
+							values = append(values, value.(string))
+						}
+						val = strings.Join(values, ",")
+					default:
+						val = val.(string)
+					}
+				}
+			}
 			if ok && val != nil {
 				i, err := convertType(val, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {

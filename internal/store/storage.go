@@ -1,9 +1,9 @@
 package store
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
@@ -17,13 +17,13 @@ type FullSyncState struct {
 
 type StorageInterface interface {
 	GetConfig() conf.StorageBackend
-	StoreEntities(entities []*entity.Entity) error
-	StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error
+	StoreEntities(entities []*uda.Entity) error
+	StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error
 	GetEntities() (io.Reader, error)
 	GetChanges(since string) (io.Reader, error)
 }
 
-func GenerateContent(entities []*entity.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
+func GenerateContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
 	reader, writer := io.Pipe()
 	entEnc := encoder.NewEntityEncoder(config, writer, logger)
 	go func() {

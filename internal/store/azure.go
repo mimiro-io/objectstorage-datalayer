@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"log"
 	"net/url"
@@ -16,7 +17,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 )
 
 type AzureStorage struct {
@@ -49,7 +49,7 @@ func (azStorage *AzureStorage) GetConfig() conf.StorageBackend {
 	return azStorage.config
 }
 
-func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity) error {
+func (azStorage *AzureStorage) StoreEntities(entities []*uda.Entity) error {
 	azStorage.logger.Debugf("Got: %d entities", len(entities))
 	tags := []string{
 		"datalayer",
@@ -85,7 +85,7 @@ func (azStorage *AzureStorage) StoreEntities(entities []*entity.Entity) error {
 	return err
 }
 
-func (azStorage *AzureStorage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (azStorage *AzureStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {
 	return errors.New("fullsync not supported for Azure")
 }
 
@@ -128,7 +128,7 @@ func (azStorage *AzureStorage) upload(content []byte, url *url.URL, credential a
 	return err
 }
 
-func (azStorage *AzureStorage) createURL(entities []*entity.Entity) (*url.URL, error) {
+func (azStorage *AzureStorage) createURL(entities []*uda.Entity) (*url.URL, error) {
 	config := azStorage.config.Properties
 
 	var rootFolder string
