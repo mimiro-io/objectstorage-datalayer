@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 	"github.com/franela/goblin"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/app"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"github.com/olivere/ndjson"
 
 	"github.com/ory/dockertest/v3"
@@ -750,11 +750,11 @@ func retrieveFirstObjectFromS3(s3Service *s3.S3, bucketname string) ([]*int64, [
 	return res, bodyBytes
 }
 
-func parseToEntities(storedContent []byte) []entity.Entity {
+func parseToEntities(storedContent []byte) []uda.Entity {
 	r := ndjson.NewReader(strings.NewReader(string(storedContent)))
-	var entities []entity.Entity
+	var entities []uda.Entity
 	for r.Next() {
-		var entity entity.Entity
+		var entity uda.Entity
 		if err := r.Decode(&entity); err != nil {
 			fmt.Fprintf(os.Stderr, "Decode failed: %v", err)
 			return nil

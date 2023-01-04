@@ -3,8 +3,8 @@ package encoder_test
 import (
 	"encoding/json"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"io/ioutil"
 	"testing"
 )
@@ -13,7 +13,7 @@ func TestFlatFile(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("The FlatFile Encoder", func() {
 		g.It("Should produce a complete fixed width flatfile from single batch", func() {
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
@@ -23,12 +23,13 @@ func TestFlatFile(t *testing.T) {
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
 		g.It("Should add spaces when field config allocates more character positions than the input value", func() {
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "9", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
@@ -38,12 +39,13 @@ func TestFlatFile(t *testing.T) {
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
 		g.It("Should return substring of value according to field config if value is longer than allocated characters", func() {
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb"}},
 			}
@@ -53,12 +55,13 @@ func TestFlatFile(t *testing.T) {
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})
 		g.It("Should count number of utf8 characters in string fields", func() {
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bår": "aååå"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bår": "Ñ¢a"}},
 				{ID: "a:3", Properties: map[string]interface{}{"a:foo": "77", "a:bår": "§"}},
@@ -69,12 +72,13 @@ func TestFlatFile(t *testing.T) {
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(expected)
 		})
 		g.It("Should produce timestamp according to date layout in field config", func() {
-			entities := []*entity.Entity{
+			entities := []*uda.Entity{
 				{ID: "a:1", Properties: map[string]interface{}{"a:foo": "99", "a:bar": "aaa", "a:date": "2021-11-05T00:00:00Z"}},
 				{ID: "a:2", Properties: map[string]interface{}{"a:foo": "88", "a:bar": "bbb", "a:date": "2021-12-05T00:00:00Z"}},
 			}
@@ -84,7 +88,8 @@ func TestFlatFile(t *testing.T) {
 			var backend conf.StorageBackend
 			json.Unmarshal([]byte(config), &backend)
 
-			readResult, err := encodeOnce(backend, entities)
+			entityContext := uda.Context{ID: "@context", Namespaces: map[string]string{}}
+			readResult, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
 			g.Assert(string(readResult)).Eql(string(expected))
 		})

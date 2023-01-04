@@ -1,8 +1,8 @@
 package encoder
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"go.uber.org/zap"
 	"io"
 	"strings"
@@ -10,7 +10,7 @@ import (
 
 type EncodingEntityWriter interface {
 	io.Closer
-	Write(entities []*entity.Entity) (int, error)
+	Write(entities []*uda.Entity) (int, error)
 	CloseWithError(err error) error
 	//encode(entities []*entity.Entity) ([]byte, error)
 }
@@ -35,7 +35,7 @@ func NewEntityEncoder(backend conf.StorageBackend, writer *io.PipeWriter, logger
 	return &JSONEncoder{backend: backend, writer: writer, logger: logger}
 }
 
-func propStripper(entity *entity.Entity) map[string]interface{} {
+func propStripper(entity *uda.Entity) map[string]interface{} {
 	var singleMap = make(map[string]interface{})
 	for k := range entity.Properties {
 		singleMap[strings.SplitAfter(k, ":")[1]] = entity.Properties[k]

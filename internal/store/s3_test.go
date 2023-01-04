@@ -2,13 +2,13 @@ package store
 
 import (
 	"fmt"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"testing"
 	"time"
 
 	"github.com/franela/goblin"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 )
 
 func TestS3(t *testing.T) {
@@ -19,7 +19,7 @@ func TestS3(t *testing.T) {
 			s3.config = conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				Partitioning: []string{"year", "month", "day", "foo"},
 			}}
-			var entities []*entity.Entity
+			var entities []*uda.Entity
 			key := s3.createKey(entities, false)
 			g.Assert(key[24:28]).Eql("year")
 			year, month, day := time.Now().Date()
@@ -31,7 +31,7 @@ func TestS3(t *testing.T) {
 			s3.config = conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
 				Partitioning: []string{"year", "month", "day"},
 			}}
-			var entities []*entity.Entity
+			var entities []*uda.Entity
 			key := s3.createKey(entities, true)
 			g.Assert(key[25:29] == "year").IsFalse("year not expected in path")
 		})

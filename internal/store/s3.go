@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"sort"
 	"strconv"
@@ -22,7 +23,6 @@ import (
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/entity"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/schema"
 )
 
@@ -233,7 +233,7 @@ func (s3s *S3Storage) GetConfig() conf.StorageBackend {
 	return s3s.config
 }
 
-func (s3s *S3Storage) StoreEntities(entities []*entity.Entity) error {
+func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if len(entities) == 0 {
 		return nil
 	}
@@ -271,7 +271,7 @@ func (s3s *S3Storage) StoreEntities(entities []*entity.Entity) error {
 	return nil
 }
 
-func (s3s *S3Storage) createKey(entities []*entity.Entity, fullSync bool) string {
+func (s3s *S3Storage) createKey(entities []*uda.Entity, fullSync bool) string {
 	t := "changes"
 	if fullSync {
 		t = "entities"
@@ -318,7 +318,7 @@ func (s3s *S3Storage) createKey(entities []*entity.Entity, fullSync bool) string
 
 var fullsyncTimeoutDuration = 30 * time.Minute
 
-func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*entity.Entity) error {
+func (s3s *S3Storage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {
 	if state.Start {
 		s3s.fullsyncId = state.Id
 		var pipeWriter *io.PipeWriter

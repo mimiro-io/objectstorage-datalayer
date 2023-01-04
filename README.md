@@ -228,6 +228,7 @@ property name | description
 `dataset` |  name of the dataset.
 `storageType` | `S3` or `Azure`. Note that other types will not produce an error, uploaded data will be logged to server logs instead.
 `stripProps` | only relevant for json encoded datasets. Csv and Parquet will implicitly set this to true. If true, the layer will transform each uploaded entity such that only properties are stored, and all property keys have their prefixes removed. If false, the complete entities are stored. Default false
+`resolveNamespace` | Resolve namespace ref to full uri in id and references.
 `storeDeleted` | If true, entities with the deleted flag are included in the stored object. If false, they are filtered out by the layer. Default false. Should only ever be set to true for unstripped json encoded datasets.
 `athenaCompatible` | reformat json batches as newline-delimited lists of json objects (ndjson). Default false
 `csv` | if not empty, the layer will use a csv encoder to transform entities into csv files. If both parquet and csv config objects are present, parquet has precedence.
@@ -296,6 +297,14 @@ must be provided like this:
   "parquet": {
     "schema": "message test_schema { required int64 id; required binary key (STRING); }"
   }
+}
+```
+By default when id is defined in the schema, it will use the entity id. This can be overridden by adding a property called `id`. 
+_When using the default entity id, the schema type must be string as entity ids, will always be strings:_
+
+```
+message test_schema {
+    required binary id (STRING);
 }
 ```
 

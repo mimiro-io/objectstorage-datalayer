@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/franela/goblin"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"os"
 	"strings"
 	"testing"
@@ -15,9 +16,9 @@ func TestParseStream(t *testing.T) {
 		g.It("Should parse json into entities", func() {
 			file, err := os.Open("../../resources/test/data/s3-test-1.json")
 			g.Assert(err).IsNil()
-			var recorded []*Entity
+			var recorded []*uda.Entity
 			var recordCnt int
-			err = ParseStream(file, func(entities []*Entity) error {
+			err = ParseStream(file, func(entities []*uda.Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				recordCnt++
 				return nil
@@ -30,9 +31,9 @@ func TestParseStream(t *testing.T) {
 		g.It("Should parse in multiple batches", func() {
 			file, err := os.Open("../../resources/test/data/s3-test-1.json")
 			g.Assert(err).IsNil()
-			var recorded []*Entity
+			var recorded []*uda.Entity
 			var recordCnt int
-			err = ParseStream(file, func(entities []*Entity) error {
+			err = ParseStream(file, func(entities []*uda.Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				recordCnt++
 				return nil
@@ -43,8 +44,8 @@ func TestParseStream(t *testing.T) {
 			g.Assert(recorded[0].ID).Eql("a:1")
 		})
 		g.It("Should handle empty input", func() {
-			var recorded []*Entity
-			err := ParseStream(bytes.NewReader(nil), func(entities []*Entity) error {
+			var recorded []*uda.Entity
+			err := ParseStream(bytes.NewReader(nil), func(entities []*uda.Entity, entityContext *uda.Context) error {
 				recorded = append(recorded, entities...)
 				return nil
 			}, 1000, false)
@@ -60,11 +61,11 @@ func TestParseStream(t *testing.T) {
 				}
 			} %v ]`
 			g.It("unexpected fields", func() {
-				var parsed *Entity
+				var parsed *uda.Entity
 				var seen bool
 				err := ParseStream(strings.NewReader(fmt.Sprintf(tpl,
 					`,{"id": "1", "foo": "bar"}`,
-				)), func(entities []*Entity) error {
+				)), func(entities []*uda.Entity, entityContext *uda.Context) error {
 					parsed = entities[0]
 					seen = true
 					return nil
@@ -78,7 +79,7 @@ func TestParseStream(t *testing.T) {
 				g.Assert(len(parsed.References)).Eql(0)
 			})
 			g.It("unexpected nested fields", func() {
-				var parsed *Entity
+				var parsed *uda.Entity
 				var seen bool
 				err := ParseStream(strings.NewReader(fmt.Sprintf(tpl,
 					`,{"id": "1",
@@ -86,7 +87,7 @@ func TestParseStream(t *testing.T) {
                                "foo": { "bar": null},
                                "ok": "value"
                            }}`,
-				)), func(entities []*Entity) error {
+				)), func(entities []*uda.Entity, entityContext *uda.Context) error {
 					parsed = entities[0]
 					seen = true
 					return nil
