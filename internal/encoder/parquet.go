@@ -181,13 +181,16 @@ func convertType(val interface{}, t *parquet.Type, logicalType *parquet.LogicalT
 }
 
 func (enc *ParquetEncoder) CloseWithError(err error) error {
-	_ = enc.pqWriter.Close()
+	if enc.pqWriter != nil {
+		_ = enc.pqWriter.Close()
+	}
 	return enc.writer.CloseWithError(err)
 }
 
 func (enc *ParquetEncoder) Open() error {
 	schemaDef, err := parquetschema.ParseSchemaDefinition(enc.backend.ParquetConfig.SchemaDefinition)
 	if err != nil {
+		enc.logger.Errorf("Failed to parse parquet schema: %s", err)
 		return err
 	}
 
