@@ -82,10 +82,10 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 				val, ok = refs[c.SchemaElement.Name]
 				if ok && val != nil {
 					switch val.(type) {
-					case []any:
+					case []string:
 						var values []string
-						for _, value := range val.([]any) {
-							values = append(values, value.(string))
+						for _, value := range val.([]string) {
+							values = append(values, value)
 						}
 						val = strings.Join(values, ",")
 					default:
