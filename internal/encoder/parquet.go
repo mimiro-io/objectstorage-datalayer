@@ -81,19 +81,11 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 			if !ok {
 				val, ok = refs[c.SchemaElement.Name]
 				if ok && val != nil {
-					switch val.(type) {
-					case []string:
-						var values []string
-						for _, value := range val.([]string) {
-							values = append(values, value)
-						}
-						val = strings.Join(values, ",")
-					default:
-						val = val.(string)
-					}
+					val = concatStringSlice(val)
 				}
 			}
 			if ok && val != nil {
+				val = concatStringSlice(val)
 				i, err := convertType(val, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {
 					return 0, err
@@ -125,6 +117,26 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 		return int(flushed), nil
 	}
 	return 0, nil
+}
+
+func concatStringSlice(value any) string {
+	var output string
+	var values []string
+	switch value.(type) {
+	case []string:
+		for _, val := range value.([]string) {
+			values = append(values, val)
+		}
+		output = strings.Join(values, ",")
+	case []any:
+		for _, val := range value.([]any) {
+			values = append(values, val.(string))
+		}
+		output = strings.Join(values, ",")
+	default:
+		output = value.(string)
+	}
+	return output
 }
 
 func convertType(val interface{}, t *parquet.Type, logicalType *parquet.LogicalType) (interface{}, error) {
