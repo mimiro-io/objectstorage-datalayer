@@ -81,11 +81,10 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 			if !ok {
 				val, ok = refs[c.SchemaElement.Name]
 				if ok && val != nil {
-					val = concatStringSlice(val)
+					val, _ = concatStringSlice(val)
 				}
 			}
 			if ok && val != nil {
-				val = concatStringSlice(val)
 				i, err := convertType(val, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {
 					return 0, err
@@ -119,8 +118,9 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 	return 0, nil
 }
 
-func concatStringSlice(value any) string {
+func concatStringSlice(value any) (string, bool) {
 	var output string
+	success := true
 	var values []string
 	switch value.(type) {
 	case []string:
@@ -134,9 +134,9 @@ func concatStringSlice(value any) string {
 		}
 		output = strings.Join(values, ",")
 	default:
-		output = value.(string)
+		output, success = value.(string)
 	}
-	return output
+	return output, success
 }
 
 func convertType(val interface{}, t *parquet.Type, logicalType *parquet.LogicalType) (interface{}, error) {
@@ -180,7 +180,7 @@ func convertType(val interface{}, t *parquet.Type, logicalType *parquet.LogicalT
 			return val.([]byte), nil
 		}
 		if logicalType.IsSetSTRING() {
-			r, ok := val.(string)
+			r, ok := concatStringSlice(val)
 			if !ok {
 				return nil, errors.New(fmt.Sprintf("could not convert %+v to string", val))
 			}
