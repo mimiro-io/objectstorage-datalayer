@@ -604,8 +604,6 @@ github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182aff
 github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0 h1:rBhB9Rls+yb8kA4x5a/cWxOufWfXt24E+kq4YlbGj3g=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.5.0/go.mod h1:fJ0UAZc1fx3xZhU4eSHQDJ1ApFmTVhp5VTpV9tm2ogg=
 github.com/miekg/pkcs11 v1.0.3/go.mod h1:XsNlhZGX73bx86s2hdc/FuaLm2CPZJemRLMA+WTFxgs=
-github.com/mimiro-io/internal-go-util v0.0.0-20230103152345-7047a6298002 h1:ml8fEVYaGMHFXyODPVGqEv0yPgMWnhcZ1V8XlZfB/FE=
-github.com/mimiro-io/internal-go-util v0.0.0-20230103152345-7047a6298002/go.mod h1:pkhOI7DpjtgAU3OcGi8LK4psGqVBGrxdt1o4z7GxvQg=
 github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066 h1:fieRtrTLC4yaiFHlVsnielIotSXPpxt9SCRosGFWCFQ=
 github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066/go.mod h1:pkhOI7DpjtgAU3OcGi8LK4psGqVBGrxdt1o4z7GxvQg=
 github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible/go.mod h1:8AuVvqP/mXw1px98n46wfvcGfQ4ci2FwoAjKYxuo3Z4=

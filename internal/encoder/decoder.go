@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
 	"golang.org/x/exp/slices"
-	"io"
-	"strings"
 )
 
 type EncodingEntityReader interface {
@@ -44,6 +46,31 @@ func toEntityBytes(line map[string]interface{}, backend conf.StorageBackend) ([]
 	result["id"] = id
 	newProps := map[string]interface{}{}
 	newRefs := map[string]interface{}{}
+
+	// add defaults if defined - this overwrites any existing values
+	if backend.DecodeConfig != nil && backend.DecodeConfig.Defaults != nil {
+		for k, v := range backend.DecodeConfig.Defaults {
+			line[k] = v
+		}
+	}
+
+	// iterate the concat columns and concat them into new fields
+	if backend.DecodeConfig != nil && backend.DecodeConfig.ConcatColumns != nil {
+		for k, v := range backend.DecodeConfig.ConcatColumns {
+			var sb strings.Builder
+			first := true
+			for _, col := range v {
+				if val, ok := line[col]; ok {
+					if !first {
+						sb.WriteString(",")
+					}
+					first = false
+					sb.WriteString(val.(string))
+				}
+			}
+			line[k] = sb.String()
+		}
+	}
 
 	ignoreColums := backend.DecodeConfig.IgnoreColumns
 	for k, v := range line {
@@ -82,7 +109,67 @@ func isRef(backend conf.StorageBackend, k string) bool {
 }
 
 func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string, v interface{}) string {
+
 	if backend.DecodeConfig != nil {
+		if backend.DecodeConfig.ColumnMappings != nil {
+			if mapped, ok := backend.DecodeConfig.ColumnMappings[k]; ok {
+				k = mapped
+			}
+		}
+
+		// if the value is multivalue process that first
+		isMultiValue := false
+		if backend.DecodeConfig.ListValueColumns != nil {
+			if mapped, ok := backend.DecodeConfig.ListValueColumns[k]; ok {
+				sv := v.(string)
+				if sv != "" {
+					v = strings.Split(sv, mapped)
+				}
+				isMultiValue = true
+			}
+		}
+
+		// convert the value to the correct type - if list then apply to all values
+		if backend.DecodeConfig.ColumnTypes != nil {
+			if mapped, ok := backend.DecodeConfig.ColumnTypes[k]; ok {
+				if isMultiValue {
+					sv := v.([]string)
+					if mapped == "int" {
+						iv := make([]int, 0)
+						for _, s := range sv {
+							vv, _ := strconv.Atoi(s)
+							iv = append(iv, vv)
+						}
+						v = iv
+					} else if mapped == "float" {
+						iv := make([]float64, 0)
+						for _, s := range sv {
+							vv, _ := strconv.ParseFloat(s, 64)
+							iv = append(iv, vv)
+						}
+						v = iv
+					} else if mapped == "bool" {
+						iv := make([]bool, 0)
+						for _, s := range sv {
+							vv, _ := strconv.ParseBool(s)
+							iv = append(iv, vv)
+						}
+						v = iv
+					}
+				} else {
+					sv := v.(string)
+					switch mapped {
+					case "int":
+						v, _ = strconv.Atoi(sv)
+					case "float":
+						v, _ = strconv.ParseFloat(sv, 64)
+					case "bool":
+						v, _ = strconv.ParseBool(sv)
+					}
+				}
+			}
+		}
+
 		prefixConfig, exist := backend.DecodeConfig.PropertyPrefixes[k]
 		if exist {
 			keyPrefix, valuePrefix := prefixValues(prefixConfig)

@@ -21,12 +21,17 @@ type StorageBackend struct {
 	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
 }
 type DecodeConfig struct {
-	Namespaces       map[string]string `json:"namespaces"`
-	PropertyPrefixes map[string]string `json:"propertyPrefixes"`
-	Refs             []string          `json:"refs"`
-	IdProperty       string            `json:"idProperty"`
-	DefaultNamespace string            `json:"defaultNamespace"`
-	IgnoreColumns    []string          `json:"ignoreColumns"`
+	Namespaces       map[string]string   `json:"namespaces"`
+	PropertyPrefixes map[string]string   `json:"propertyPrefixes"`
+	Refs             []string            `json:"refs"`
+	IdProperty       string              `json:"idProperty"`
+	DefaultNamespace string              `json:"defaultNamespace"`
+	IgnoreColumns    []string            `json:"ignoreColumns"`
+	ColumnMappings   map[string]string   `json:"columnMappings"`
+	ColumnTypes      map[string]string   `json:"columnTypes"`
+	ListValueColumns map[string]string   `json:"listValueColumns"`
+	Defaults         map[string]string   `json:"defaults"`
+	ConcatColumns    map[string][]string `json:"columnConcats"`
 }
 type LocalFileConfig struct {
 	RootFolder string `json:"rootfolder"`
