@@ -78,9 +78,15 @@ func toEntityBytes(line map[string]interface{}, backend conf.StorageBackend) ([]
 			continue
 		}
 		if isRef(backend, k) {
-			withPrefix(newRefs, backend, k, v)
+			_, err = withPrefix(newRefs, backend, k, v)
+			if err != nil {
+				return nil, err
+			}
 		} else {
-			withPrefix(newProps, backend, k, v)
+			_, err = withPrefix(newProps, backend, k, v)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -108,7 +114,7 @@ func isRef(backend conf.StorageBackend, k string) bool {
 	return false
 }
 
-func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string, v interface{}) string {
+func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string, v interface{}) (string, error) {
 
 	if backend.DecodeConfig != nil {
 		if backend.DecodeConfig.ColumnMappings != nil {
@@ -160,6 +166,8 @@ func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string,
 							iv = append(iv, vv)
 						}
 						v = iv
+					} else {
+						return "", errors.New(fmt.Sprintf("Unsupported type %v for column %v", mapped, k))
 					}
 				} else {
 					sv := v.(string)
@@ -170,6 +178,8 @@ func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string,
 						v, _ = strconv.ParseFloat(sv, 64)
 					case "bool":
 						v, _ = strconv.ParseBool(sv)
+					default:
+						return "", errors.New(fmt.Sprintf("Unsupported type %v for column %v", mapped, k))
 					}
 				}
 			}
@@ -184,7 +194,7 @@ func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string,
 		}
 	}
 
-	return k
+	return k, nil
 }
 
 func wrap(value interface{}, prefix string) interface{} {
