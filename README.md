@@ -194,7 +194,25 @@ Depending on storage type and security requirements the configuration of each da
         "idProperty": "field1",
         "refs": [
             "field2"
-        ]
+        ],
+        "columnMappings": {
+            "Lat" : "latitude",
+            "Long." : "longitude"
+        },
+        "columnTypes" : {
+            "coordinates" : "float",  
+            "latitude" : "float",
+            "longitude" : "float"
+        },
+        "columnConcats" : {
+            "coordinates" : ["Lat.", "Long."]
+        },
+        "listValueColumns" : {
+            "coordinates" : ","
+        },
+        "defaults" : {
+            "type" : "feature"
+        },
     },
     "flatFile": {
         "fields": {
@@ -257,6 +275,11 @@ property name | description
 `decode.idProperty` | UDA entities require an `id` field. This field declares which object key to fetch the id value from. value prefixes from correlating `propertyPrefix` settings are also applied to the id value.
 `decode.refs` | list of object keys that should be placed into refs instead of props. prefixes from propertiesPrefixes are still applied.
 `decode.defaultNamespace` | One of the defined namespaces under `decode.namespaces`. Will be used for all properties not specified under `decode.propertyPrefixes`.
+`decode.defaults` | list of default values for properties. Each key value pair in this object will be added to each row before being converted to an entity.
+`decode.listValueColumns` | list of object keys that should be interpreted as list values. The value of each key is the separator used to split the raw value. The split values will be added to the entity as an array.
+`decode.columnTypes` | list of object keys that should be interpreted as a specific type. The value of each key is the type to be used. Supported types are `int`, `float`, and `bool`.
+`decode.columnMappings` | list of object keys that should be renamed. The value of each key is the new name to be used. The mapping occurs before any prefixes are applied.
+`decode.columnConcats` | list of object keys that should be concatenated. The value of each key is the list of fields to be concatenated. ',' is used as a separator. The concatenation occurs before any prefixes or mappings are applied.
 `flatFile.fields` | Map of field configs. The key will be the property name in the output entity.
 `flatFile.fields.substring` | A two-dimensional array to declare string indices to use in substring. i.e. [[0,5]]
 `flatFile.fields.type` | Declare type of the parsed field. Available types are string,int,float,date. Default: string.

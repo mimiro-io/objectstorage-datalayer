@@ -3,16 +3,129 @@ package encoder
 import (
 	"encoding/csv"
 	"encoding/json"
-	"github.com/franela/goblin"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/franela/goblin"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 )
 
 func TestDecodeLine(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("The toEntityBytes function", func() {
+		// column types
+		g.It("Should return mapped columns", func() {
+			input := `{"id": "1", "name": "Hank", "age": "42", "distance": "1.5"}`
+			expected := `{"id":"a:1", "deleted": false, "refs":{}, "props":{"a:id": "a:1", "a:name": "Hank", "a:age": 42, "a:distance": 1.5}}`
+			backend := conf.StorageBackend{StripProps: true, DecodeConfig: &conf.DecodeConfig{
+				Namespaces:       nil,
+				PropertyPrefixes: map[string]string{"id": "a:a", "name": "a", "age": "a", "distance": "a"},
+				IdProperty:       "id",
+				ColumnTypes:      map[string]string{"age": "int", "distance": "float"},
+			}}
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+
+		// column mappings
+		g.It("Should return coerced datatype values", func() {
+			input := `{"id": "1", "name": "Hank"}`
+			expected := `{"id":"a:1", "deleted": false, "refs":{}, "props":{"a:id": "a:1", "a:fullname": "Hank"}}`
+			backend := conf.StorageBackend{StripProps: true, DecodeConfig: &conf.DecodeConfig{
+				Namespaces:       nil,
+				PropertyPrefixes: map[string]string{"id": "a:a", "fullname": "a"},
+				IdProperty:       "id",
+				ColumnMappings:   map[string]string{"name": "fullname"},
+			}}
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+
+		// list columns
+		g.It("Should return list value from single value", func() {
+			input := `{"id": "1", "name": "Hank", "hobbies": "reading, writing"}`
+			expected := `{"id":"a:1", "deleted": false, "refs":{}, "props":{"a:id": "a:1", "a:fullname": "Hank", "a:hobbies": ["reading", "writing"]}}`
+			backend := conf.StorageBackend{StripProps: true, DecodeConfig: &conf.DecodeConfig{
+				Namespaces:       nil,
+				PropertyPrefixes: map[string]string{"id": "a:a", "fullname": "a", "hobbies": "a"},
+				IdProperty:       "id",
+				ListValueColumns: map[string]string{"hobbies": ","},
+				ColumnMappings:   map[string]string{"name": "fullname"},
+			}}
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+
+		// default values
+		g.It("Should return set default value", func() {
+			input := `{"id": "1", "name": "Hank", "hobbies": "reading, writing"}`
+			expected := `{"id":"a:1", "deleted": false, "refs":{"rdf:type" : "schema:Person"}, "props":{"a:id": "a:1", "a:fullname": "Hank", "a:hobbies": ["reading", "writing"]}}`
+			backend := conf.StorageBackend{StripProps: true, DecodeConfig: &conf.DecodeConfig{
+				Namespaces:       nil,
+				PropertyPrefixes: map[string]string{"id": "a:a", "type": "rdf:schema", "fullname": "a", "hobbies": "a"},
+				IdProperty:       "id",
+				ListValueColumns: map[string]string{"hobbies": ","},
+				ColumnMappings:   map[string]string{"name": "fullname"},
+				Defaults:         map[string]string{"type": "Person"},
+				Refs:             []string{"type"},
+			}}
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+
+		// column concats
+		g.It("Should return new column with concated values", func() {
+			input := `{"id": "1", "name": "Hank", "hobby1": "reading", "hobby2": "writing"}`
+			expected := `{"id":"a:1", "deleted": false, "refs":{"rdf:type" : "schema:Person"}, "props":{"a:id": "a:1", "a:name": "Hank", "a:hobbies": "reading,writing"}}`
+			backend := conf.StorageBackend{StripProps: true, DecodeConfig: &conf.DecodeConfig{
+				Namespaces:       nil,
+				PropertyPrefixes: map[string]string{"id": "a:a", "type": "rdf:schema", "name": "a", "hobbies": "a"},
+				IdProperty:       "id",
+				IgnoreColumns:    []string{"hobby1", "hobby2"},
+				ConcatColumns:    map[string][]string{"hobbies": {"hobby1", "hobby2"}},
+				Defaults:         map[string]string{"type": "Person"},
+				Refs:             []string{"type"},
+			}}
+			var m map[string]interface{}
+			json.Unmarshal([]byte(input), &m)
+			result, err := toEntityBytes(m, backend)
+			var resultMap map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
+
 		g.It("Should return stripped entities with configured mappings in place", func() {
 			input := `{"id": "1", "name": "Hank"}`
 			expected := `{"id":"a:1", "deleted": false, "refs":{}, "props":{"a:id": "a:1", "a:name": "Hank"}}`
