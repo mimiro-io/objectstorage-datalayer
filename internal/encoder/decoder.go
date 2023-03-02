@@ -123,7 +123,12 @@ func withPrefix(m map[string]interface{}, backend conf.StorageBackend, k string,
 			if mapped, ok := backend.DecodeConfig.ListValueColumns[k]; ok {
 				sv := v.(string)
 				if sv != "" {
-					v = strings.Split(sv, mapped)
+					tv := strings.Split(sv, mapped)
+					vs := make([]string, 0)
+					for _, s := range tv {
+						vs = append(vs, strings.TrimSpace(s))
+					}
+					v = vs
 				}
 				isMultiValue = true
 			}
