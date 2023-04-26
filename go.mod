@@ -111,7 +111,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220922195421-2adab6b8c60e // indirect
 	golang.org/x/net v0.3.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
+	golang.org/x/sys v0.7.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
 	golang.org/x/tools v0.1.12 // indirect
