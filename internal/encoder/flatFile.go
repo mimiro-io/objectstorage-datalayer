@@ -271,6 +271,17 @@ func (d *FlatFileDecoder) convertType(value string, fieldConfig conf.FlatFileFie
 		}
 		return asFloat, nil
 	case "date":
+		var location *time.Location
+		var err error
+		if d.backend.Timezone != "" {
+			location, err = time.LoadLocation(d.backend.Timezone)
+			if err != nil {
+				d.logger.Errorf("Error parsing timezone from table definition")
+				return nil, nil
+			}
+		} else {
+			location, _ = time.LoadLocation("UTC")
+		}
 		layout := fieldConfig.DateLayout
 		if layout == "" {
 			return value, errors.New("no date layout defined for type date in flat file field config")
@@ -279,7 +290,11 @@ func (d *FlatFileDecoder) convertType(value string, fieldConfig conf.FlatFileFie
 		if err != nil {
 			return value, err
 		}
-		return timestamp.Format(time.RFC3339), nil
+		timestamp, err = time.ParseInLocation("2006-01-02T15:04:05Z", timestamp.Format(time.RFC3339), location)
+		if err != nil {
+			d.logger.Errorf("Error parsing timestamp: %s", timestamp)
+		}
+		return timestamp.Format(time.RFC3339Nano), nil
 	default:
 		return value, nil
 	}

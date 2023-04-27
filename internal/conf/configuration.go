@@ -19,7 +19,9 @@ type StorageBackend struct {
 	Properties       PropertiesMapping `json:"props"`
 	DecodeConfig     *DecodeConfig     `json:"decode"`
 	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
+	Timezone         string            `json:"timezone"`
 }
+
 type DecodeConfig struct {
 	Namespaces       map[string]string   `json:"namespaces"`
 	PropertyPrefixes map[string]string   `json:"propertyPrefixes"`
@@ -33,10 +35,12 @@ type DecodeConfig struct {
 	Defaults         map[string]string   `json:"defaults"`
 	ConcatColumns    map[string][]string `json:"columnConcats"`
 }
+
 type LocalFileConfig struct {
 	RootFolder string `json:"rootfolder"`
 	FileSuffix string `json:"filesuffix"`
 }
+
 type PropertiesMapping struct {
 	Bucket             *string `json:"bucket,omitempty"`
 	Region             *string `json:"region,omitempty"`
