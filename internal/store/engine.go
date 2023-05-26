@@ -39,28 +39,17 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 	}
 
 	var state storageState
-
-	if s, ok := engine.storages[datasetName]; ok {
-		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
-		engine.logger.Debug(storage)
-		if err != nil {
-			return nil, err
-		}
-
-		engine.storages[datasetName] = s
-		state = s
-	} else {
-		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
-		if err != nil {
-			return nil, err
-		}
-		s := storageState{
-			isRunning: true,
-			storage:   storage,
-		}
-		engine.storages[datasetName] = s
-		state = s
+	storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
+	s := storageState{
+		isRunning: true,
+		storage:   storage,
 	}
+	if err != nil {
+		return nil, err
+	}
+
+	engine.storages[datasetName] = s
+	state = s
 
 	return state.storage, nil
 }
