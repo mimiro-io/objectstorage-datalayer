@@ -6,6 +6,7 @@ import (
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
 	"strings"
+	"sync"
 )
 
 type StorageEngine struct {
@@ -14,6 +15,7 @@ type StorageEngine struct {
 	storages map[string]storageState
 	mngr     *conf.ConfigurationManager
 	env      *conf.Env
+	lock     *sync.RWMutex
 }
 
 type storageState struct {
@@ -28,6 +30,7 @@ func NewStorageEngine(logger *zap.SugaredLogger, config *conf.ConfigurationManag
 		logger:   logger.Named("storage"),
 		env:      env,
 		storages: make(map[string]storageState),
+		lock:     &sync.RWMutex{},
 	}
 }
 
@@ -39,7 +42,7 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 	}
 
 	var state storageState
-
+	engine.lock.RLock()
 	if s, ok := engine.storages[datasetName]; ok {
 		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
 		engine.logger.Debug(storage)
@@ -49,6 +52,7 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 
 		engine.storages[datasetName] = s
 		state = s
+
 	} else {
 		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
 		if err != nil {
@@ -60,16 +64,21 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 		}
 		engine.storages[datasetName] = s
 		state = s
-	}
 
+	}
+	engine.lock.RUnlock()
 	return state.storage, nil
 }
 
 // Close handles cleanup of storage engines, if needed
 func (engine *StorageEngine) Close(datasetName string) {
+	engine.lock.RLock()
 	if s, ok := engine.storages[datasetName]; ok {
+
 		s.isRunning = false
+
 	}
+	engine.lock.RUnlock()
 }
 
 func (engine *StorageEngine) initBackend(backend conf.StorageBackend) (StorageInterface, error) {
