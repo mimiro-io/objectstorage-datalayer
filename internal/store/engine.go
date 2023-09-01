@@ -43,13 +43,13 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 
 	var state storageState
 	engine.lock.Lock()
+	defer engine.lock.Unlock()
 	if s, ok := engine.storages[datasetName]; ok {
 		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
 		engine.logger.Debug(storage)
 		if err != nil {
 			return nil, err
 		}
-
 		engine.storages[datasetName] = s
 		state = s
 
@@ -64,21 +64,17 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 		}
 		engine.storages[datasetName] = s
 		state = s
-
 	}
-	engine.lock.Unlock()
 	return state.storage, nil
 }
 
 // Close handles cleanup of storage engines, if needed
 func (engine *StorageEngine) Close(datasetName string) {
 	engine.lock.Lock()
+	defer engine.lock.Unlock()
 	if s, ok := engine.storages[datasetName]; ok {
-
 		s.isRunning = false
-
 	}
-	engine.lock.Unlock()
 }
 
 func (engine *StorageEngine) initBackend(backend conf.StorageBackend) (StorageInterface, error) {
