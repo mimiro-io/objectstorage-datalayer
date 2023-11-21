@@ -156,14 +156,21 @@ func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
 
 	var headerLine []string
 	var record []string
-
-	if dec.headerline == nil {
-		headerLine, err = dec.csvreader.Read()
-		if err == nil {
-			dec.headerline = headerLine
+	// create headerline from config or from read.
+	if dec.backend.CsvConfig.Header {
+		if dec.headerline == nil {
+			headerLine, err = dec.csvreader.Read()
+			if err == nil {
+				dec.headerline = headerLine
+			}
 		}
+	} else if !dec.backend.CsvConfig.Header {
+		if dec.backend.CsvConfig.Order != nil {
+			dec.headerline = append(dec.headerline, dec.backend.CsvConfig.Order...)
+		}
+	} else {
+		dec.logger.Warnf("No strategy chosen for headers chosen, please change config")
 	}
-
 	//streaming doesnt work with ReadAll()
 	// append one entity per line, comma separated
 	for {

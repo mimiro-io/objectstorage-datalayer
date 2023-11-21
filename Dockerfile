@@ -17,7 +17,7 @@ RUN go vet ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o server cmd/storage/main.go
 
 FROM alpine:latest
-
+RUN apk update && apk upgrade --no-cache libcrypto3 libssl3
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
