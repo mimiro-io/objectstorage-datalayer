@@ -272,5 +272,82 @@ func TestDecodeLine(t *testing.T) {
 			g.Assert(err).IsNil()
 			g.Assert(resultMap).Eql(expectedMap)
 		})
+		g.It("Should produce json entity from input csv without headers", func() {
+			reader, _ := io.Pipe()
+			result := make([]byte, 0)
+			backend := conf.StorageBackend{CsvConfig: &conf.CsvConfig{
+				Header:         false,
+				Encoding:       "UTF-8",
+				Separator:      ",",
+				Order:          []string{"id", "key", "name", "surname", "Text"},
+				SkipRows:       2,
+				ValidateFields: false,
+			}}
+			decoder := &CsvDecoder{backend: backend, reader: reader, logger: nil, since: ""}
+			//var input []string
+			data := "1\n2\n991234,1,Tester,,Yes\n88456,abc,Fester,,asd\n"
+
+			csvRead := csv.NewReader(strings.NewReader(data))
+			if !backend.CsvConfig.ValidateFields {
+				csvRead.FieldsPerRecord = -1
+			}
+
+			csvRead.Comma = rune(backend.CsvConfig.Separator[0])
+			skip := 0
+			headerLine := make([]string, 0)
+			for skip < backend.CsvConfig.SkipRows {
+				if _, err := csvRead.Read(); err != nil {
+					panic(err)
+				}
+				skip++
+			}
+			if decoder.backend.CsvConfig.Header {
+				headerLine, _ = csvRead.Read()
+			} else if !decoder.backend.CsvConfig.Header {
+				if decoder.backend.CsvConfig.Order != nil {
+					headerLine = append(headerLine, decoder.backend.CsvConfig.Order...)
+				}
+			} else {
+				decoder.logger.Warnf("No strategy for headers chosen, please fix config")
+			}
+			records, err := csvRead.ReadAll()
+			if err != nil {
+				panic(err)
+			}
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},{"deleted":false,"id":"991234","props":{"_:surname":"", "_:id":"991234","_:key":"1","_:name":"Tester","_:Text":"Yes"},"refs":{}},{"deleted":false,"id":"88456","props":{"_:surname":"","_:id":"88456","_:key":"abc","_:name":"Fester", "_:Text":"asd"},"refs":{}},{"id":"@continuation","token":""}]`
+			config := `{"decode":{"defaultNamespace":"_","namespaces":{"_":"http://example.io/foo/"},"propertyPrefixes":{},"refs":[],"idProperty":"id"}}`
+			json.Unmarshal([]byte(config), &backend)
+			result = append(result, []byte("[")...)
+			result = append(result, []byte(buildContext(backend.DecodeConfig.Namespaces))...)
+			for _, record := range records {
+				var entityProps = make(map[string]interface{})
+				entityProps, err := decoder.parseRecord(record, headerLine)
+				if err != nil {
+					return
+				}
+				var entityBytes []byte
+				entityBytes, err = toEntityBytes(entityProps, backend)
+				if err != nil {
+					return
+				}
+				result = append(result, append([]byte(","), entityBytes...)...)
+			}
+			token := ""
+			// Add continuation token
+			entity := map[string]interface{}{
+				"id":    "@continuation",
+				"token": token,
+			}
+			sinceBytes, err := json.Marshal(entity)
+			result = append(result, append([]byte(","), sinceBytes...)...)
+			result = append(result, []byte("]")...)
+			g.Assert(err).IsNil()
+			var resultMap []map[string]interface{}
+			json.Unmarshal(result, &resultMap)
+			var expectedMap []map[string]interface{}
+			json.Unmarshal([]byte(expected), &expectedMap)
+			g.Assert(err).IsNil()
+			g.Assert(resultMap).Eql(expectedMap)
+		})
 	})
 }
