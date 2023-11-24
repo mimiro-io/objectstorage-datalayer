@@ -168,7 +168,7 @@ func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
 				dec.headerline = dec.backend.CsvConfig.Order
 			}
 		} else {
-			dec.logger.Warnf("No strategy chosen for headers chosen, please change config")
+			dec.logger.Errorf("No strategy chosen for headers chosen, please change config")
 		}
 	}
 
