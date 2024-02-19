@@ -4,7 +4,6 @@
         {
             "dataset": "azure-plain",
             "storageType": "Azure",
-            "athenaCompatible": false,
             "storeDeleted": true,
             "stripProps": false,
             "decode": {
@@ -18,7 +17,8 @@
                 "endpoint": "http://localhost:8888",
                 "key": "devstoreaccount1",
                 "secret": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
-                "resourceName": "devstoreaccount1"
+                "resourceName": "devstoreaccount1",
+                "bucket": "azure-plain"
             }
         },
         {
@@ -35,7 +35,8 @@
                 "endpoint": "http://localhost:8888",
                 "key": "devstoreaccount1",
                 "secret": "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==",
-                "resourceName": "devstoreaccount1"
+                "resourceName": "devstoreaccount1",
+                "bucket": "azure-parquet"
             }
         }
     ]

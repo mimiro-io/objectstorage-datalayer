@@ -10,37 +10,38 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/Azure/azure-storage-blob-go/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/franela/goblin"
 	goparquet "github.com/fraugster/parquet-go"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/app"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"go.uber.org/fx"
-
-	"github.com/mimiro-io/objectstorage-datalayer/internal/app"
 )
 
 func TestAzure(t *testing.T) {
 	g := goblin.Goblin(t)
 	var fxApp *fx.App
 	layerUrl := "http://localhost:19898/datasets"
-	var plainContainerURL azblob.ContainerURL
-	var parquetContainerURL azblob.ContainerURL
 
 	g.Describe("The azure storage", func() {
 		var endpoint string
 		ctx, cancel := context.WithCancel(context.Background())
 		var testConf *os.File
 		var azureContainer testcontainers.Container
+		var plainContainerName = "azure-plain"
+		var parquetContainerName = "azure-parquet"
+		var mixedContainerName = "azure-mixed"
+		var client *azblob.Client
 		g.Before(func() {
 			os.Setenv("SERVER_PORT", "19898")
 			os.Setenv("AUTHORIZATION_MIDDLEWARE", "noop")
@@ -64,12 +65,14 @@ func TestAzure(t *testing.T) {
 			if endpoint == "" {
 				ctx := context.Background()
 				req := testcontainers.ContainerRequest{
-					Image:        "mcr.microsoft.com/azure-storage/azurite",
-					ExposedPorts: []string{"10000"},
-					Cmd:          []string{"azurite-blob", "--blobHost", "0.0.0.0"},
-					Entrypoint:   nil,
-					WaitingFor:   wait.ForLog("Azurite Blob service"),
+					Image:           "mcr.microsoft.com/azure-storage/azurite",
+					ExposedPorts:    []string{"10000"},
+					Cmd:             []string{"azurite-blob", "--blobHost", "0.0.0.0"},
+					Entrypoint:      nil,
+					WaitingFor:      wait.ForLog("Azurite Blob service"),
+					AlwaysPullImage: true,
 				}
+
 				var err error
 				azureContainer, err = testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 					ContainerRequest: req,
@@ -80,21 +83,24 @@ func TestAzure(t *testing.T) {
 				}
 				actualPort, _ := azureContainer.MappedPort(ctx, nat.Port("10000/tcp"))
 				ip, _ := azureContainer.Host(ctx)
+
 				port := actualPort.Port()
 				endpoint = ip + ":" + port
 			}
-
-			u, _ := url.Parse("http://" + endpoint + "/devstoreaccount1")
-			cred, _ := azblob.NewSharedKeyCredential("devstoreaccount1",
+			// use new format with create client for azure
+			credential, _ := azblob.NewSharedKeyCredential("devstoreaccount1",
 				"Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==")
-			// Create an ServiceURL object that wraps the service URL and a request pipeline.
-			serviceURL := azblob.NewServiceURL(*u, azblob.NewPipeline(cred, azblob.PipelineOptions{}))
-			//ctx := context.Background()
-			plainContainerURL = serviceURL.NewContainerURL("azure-plain")
-			parquetContainerURL = serviceURL.NewContainerURL("azure-parquet")
+			azUrl := fmt.Sprintf("http://%s/devstoreaccount1", endpoint)
+			client, _ = azblob.NewClientWithSharedKeyCredential(azUrl, credential, nil)
 			// Create the container on the service (with no metadata and public access)
-			plainContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
-			parquetContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
+			_, err := client.CreateContainer(ctx, plainContainerName, nil)
+			_, err = client.CreateContainer(ctx, parquetContainerName, nil)
+			_, err = client.CreateContainer(ctx, mixedContainerName, nil)
+
+			if err != nil {
+				fmt.Println("couldn't create containers")
+			}
+
 		})
 		g.After(func() {
 			if azureContainer != nil {
@@ -109,18 +115,21 @@ func TestAzure(t *testing.T) {
 			if fxApp != nil {
 				fxApp.Stop(ctx)
 			}
+
 			//reset azure container
-			_, _ = plainContainerURL.Delete(ctx, azblob.ContainerAccessConditions{})
-			_, _ = plainContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
-			_, _ = parquetContainerURL.Delete(ctx, azblob.ContainerAccessConditions{})
-			_, _ = parquetContainerURL.Create(ctx, azblob.Metadata{}, azblob.PublicAccessContainer)
+			_, _ = client.DeleteContainer(ctx, plainContainerName, nil)
+			_, _ = client.CreateContainer(ctx, plainContainerName, nil)
+			_, _ = client.DeleteContainer(ctx, parquetContainerName, nil)
+			_, _ = client.CreateContainer(ctx, parquetContainerName, nil)
+			_, _ = client.DeleteContainer(ctx, mixedContainerName, nil)
+			_, _ = client.CreateContainer(ctx, mixedContainerName, nil)
 
 			stdErr := os.Stderr
 			stdOut := os.Stdout
 			devNull, _ := os.Open("/dev/null")
 			os.Stderr = devNull
 			os.Stdout = devNull
-			testConf = replaceTestConf("./resources/test/azure-test-config.json", endpoint, t)
+			testConf = ReplaceTestConf("./resources/test/azure-test-config.json", endpoint, t)
 			defer os.Remove(testConf.Name())
 			os.Setenv("CONFIG_LOCATION", "file://"+testConf.Name())
 			fxApp, _ = app.Start(ctx)
@@ -158,9 +167,9 @@ func TestAzure(t *testing.T) {
 				"application/json", strings.NewReader(string(fileBytes)))
 			g.Assert(err).IsNil()
 			g.Assert(res.StatusCode).Eql(200)
-			items := GetBlobItems(plainContainerURL, "")
+			items := GetBlobItems(client, plainContainerName, "")
 			g.Assert(len(items)).Eql(1)
-			content := ReadBlobContents(plainContainerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
+			content := ReadBlobContents(*client, plainContainerName, *items[0].Name, uint64(*items[0].Properties.ContentLength))
 
 			var entities []map[string]interface{}
 			_ = json.Unmarshal(content, &entities)
@@ -184,10 +193,10 @@ func TestAzure(t *testing.T) {
 			g.Assert(err).IsNil()
 			g.Assert(res.StatusCode).Eql(200)
 
-			items := GetBlobItems(parquetContainerURL, "")
+			items := GetBlobItems(client, parquetContainerName, "")
 			g.Assert(len(items)).Eql(2)
 
-			content := ReadBlobContents(parquetContainerURL, items[0].Name, uint64(*items[0].Properties.ContentLength))
+			content := ReadBlobContents(*client, parquetContainerName, *items[0].Name, uint64(*items[0].Properties.ContentLength))
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(content), "id", "firstname")
 			g.Assert(err).IsNil()
 
@@ -196,54 +205,65 @@ func TestAzure(t *testing.T) {
 			g.Assert(string(row["id"].([]byte))).Eql("a:1")
 			g.Assert(string(row["firstname"].([]byte))).Eql("Frank")
 		})
+
+		g.It("Should download files and unmarshal", func() {
+			g.Timeout(1 * time.Hour)
+			fileBytes, err := ioutil.ReadFile("./resources/test/data/s3-test-1.json")
+			g.Assert(err).IsNil()
+			res, err := http.DefaultClient.Post(layerUrl+"/azure-plain/entities",
+				"application/json", strings.NewReader(string(fileBytes)))
+			g.Assert(err).IsNil()
+			g.Assert(res.StatusCode).Eql(200)
+			items := GetBlobItems(client, plainContainerName, "")
+
+			g.Assert(len(items)).Eql(1)
+			content := ReadBlobContents(*client, plainContainerName, *items[0].Name, uint64(*items[0].Properties.ContentLength))
+
+			var entities []map[string]interface{}
+			_ = json.Unmarshal(content, &entities)
+			g.Assert(len(entities)).Eql(3)
+		})
 	})
 }
 
 // GetBlobItems return list of blobs in the storage account
-func GetBlobItems(containerURL azblob.ContainerURL, prefix string) (blobItems []azblob.BlobItemInternal) {
-	ctx := context.Background()
-	// log.Printf("Get Blob Items: %s", prefix)
-	for marker := (azblob.Marker{}); marker.NotDone(); {
-		// Get a result segment starting with the blob indicated by the current Marker.
-		options := azblob.ListBlobsSegmentOptions{}
-		options.Details.Metadata = true
-		if prefix != "" {
-			options.Prefix = prefix
-		}
-		listBlob, err := containerURL.ListBlobsHierarchySegment(ctx, marker, "/", options)
+func GetBlobItems(client *azblob.Client, containerName string, prefix string) (blobItems []container.BlobItem) {
+
+	fmt.Println("Listing the blobs in the container:")
+
+	pager := *client.NewListBlobsFlatPager(containerName, &azblob.ListBlobsFlatOptions{
+		Include: azblob.ListBlobsInclude{Snapshots: true, Versions: true},
+	})
+	blobItems = make([]container.BlobItem, 0)
+	for pager.More() {
+		resp, err := pager.NextPage(context.TODO())
 		if err != nil {
-			fmt.Printf("Error")
+			fmt.Println("error reading the blobs")
 		}
-		// IMPORTANT: ListBlobs returns the start of the next segment; you MUST use this to get
-		// the next segment (after processing the current result segment).
-		marker = listBlob.NextMarker
-
-		// Process the blobs returned in this result segment (if the segment is empty, the loop body won't execute)
-		for _, blobInfo := range listBlob.Segment.BlobItems {
-			blobItems = append(blobItems, blobInfo)
-		}
-
-		for _, blobPrefix := range listBlob.Segment.BlobPrefixes {
-			for _, nestedItem := range GetBlobItems(containerURL, blobPrefix.Name) {
-				blobItems = append(blobItems, nestedItem)
-			}
+		for _, blob := range resp.Segment.BlobItems {
+			blobItems = append(blobItems, *blob)
 		}
 	}
 	return blobItems
 }
 
 // ReadBlobContents returns the byte array of the content of blob
-func ReadBlobContents(containerURL azblob.ContainerURL, blobName string, blobsize uint64) []byte {
+func ReadBlobContents(client azblob.Client, containerName string, blobName string, blobsize uint64) []byte {
+
 	ctx := context.Background()
-	// log.Printf("RedBlobContent: %s", blobName)
-	blobURL := containerURL.NewBlobURL(blobName)
-	b := make([]byte, blobsize)
-	o := azblob.DownloadFromBlobOptions{
-		Parallelism: 5,
-	}
-	err := azblob.DownloadBlobToBuffer(ctx, blobURL, 0, 0, b, o)
+	get, _ := client.DownloadStream(ctx, containerName, blobName, nil)
+
+	b := bytes.Buffer{}
+	retryReader := get.NewRetryReader(ctx, &azblob.RetryReaderOptions{})
+	_, err := b.ReadFrom(retryReader)
 	if err != nil {
-		fmt.Errorf("%w", err)
+		fmt.Println(err)
 	}
-	return b
+
+	err = retryReader.Close()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return b.Bytes()
 }

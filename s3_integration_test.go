@@ -108,7 +108,7 @@ func TestS3(t *testing.T) {
 			devNull, _ := os.Open("/dev/null")
 			os.Stderr = devNull
 			os.Stdout = devNull
-			testConf = replaceTestConf("./resources/test/s3-test-config.json", endpoint, t)
+			testConf = ReplaceTestConf("./resources/test/s3-test-config.json", endpoint, t)
 			defer os.Remove(testConf.Name())
 			os.Setenv("CONFIG_LOCATION", "file://"+testConf.Name())
 			fxApp, _ = app.Start(ctx)
@@ -768,7 +768,7 @@ func parseToEntities(storedContent []byte) []uda.Entity {
 	return entities
 }
 
-func replaceTestConf(fileTemplate string, endpoint string, t *testing.T) *os.File {
+func ReplaceTestConf(fileTemplate string, endpoint string, t *testing.T) *os.File {
 	bts, err := ioutil.ReadFile(fileTemplate)
 	if err != nil {
 		t.Fatal(err)
