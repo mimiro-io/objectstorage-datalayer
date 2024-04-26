@@ -2,11 +2,12 @@ package encoder_test
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"testing"
+
 	"github.com/franela/goblin"
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"io/ioutil"
-	"testing"
 )
 
 func TestFlatFile(t *testing.T) {
@@ -141,6 +142,47 @@ func TestFlatFile(t *testing.T) {
 			all, err := ioutil.ReadAll(reader)
 			g.Assert(err).IsNil()
 			g.Assert(len(all)).Eql(283)
+			g.Assert(string(all)).Eql(expected)
+		})
+		g.It("Should align properly on bufferlength", func() {
+			entities := []byte(
+				"99123\n" +
+					"88234\n" +
+					"77345\n" +
+					"66456\n" +
+					"55567\n" +
+					"44678\n",
+			)
+
+			expected := `[{"id":"@context","namespaces":{"_":"http://example.io/foo/"}},` +
+				`{"deleted":false,"id":"99","props":{"_:bar":123,"_:foo":"99"},"refs":{}},` +
+				`{"deleted":false,"id":"88","props":{"_:bar":234,"_:foo":"88"},"refs":{}},` +
+				`{"deleted":false,"id":"77","props":{"_:bar":345,"_:foo":"77"},"refs":{}},` +
+				`{"deleted":false,"id":"66","props":{"_:bar":456,"_:foo":"66"},"refs":{}},` +
+				`{"deleted":false,"id":"55","props":{"_:bar":567,"_:foo":"55"},"refs":{}},` +
+				`{"deleted":false,"id":"44","props":{"_:bar":678,"_:foo":"44"},"refs":{}},` +
+				`{"id":"@continuation","token":""}]`
+
+			config := `{
+				"flatFile":{ "fields":{
+					"foo":{"substring":[[0,2]]},
+					"bar":{"substring":[[2,5]],"type":"integer"}
+				}},
+				"decode":{
+					"defaultNamespace":"_",
+					"namespaces":{"_":"http://example.io/foo/"},
+					"propertyPrefixes":{},
+					"refs":[],
+					"idProperty":"foo"
+			}}`
+			var backend conf.StorageBackend
+			json.Unmarshal([]byte(config), &backend)
+
+			reader, err := decodeOnce(backend, entities)
+			g.Assert(err).IsNil()
+			all, err := ioutil.ReadAll(reader)
+			g.Assert(err).IsNil()
+			// fmt.Println(string(all))
 			g.Assert(string(all)).Eql(expected)
 		})
 	})

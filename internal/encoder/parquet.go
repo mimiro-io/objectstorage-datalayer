@@ -302,16 +302,16 @@ func (d *ParquetDecoder) Read(p []byte) (n int, err error) {
 	} else {
 		token = d.since
 	}
-	// Add continuation token
-	continueEntity := map[string]interface{}{
-		"id":    "@continuation",
-		"token": token,
-	}
-	sinceBytes, err := json.Marshal(continueEntity)
-	buf = append(buf, append([]byte(","), sinceBytes...)...)
 
 	// close json array
 	if !d.closed {
+		// Add continuation token
+		continueEntity := map[string]interface{}{
+			"id":    "@continuation",
+			"token": token,
+		}
+		sinceBytes, _ := json.Marshal(continueEntity)
+		buf = append(buf, append([]byte(","), sinceBytes...)...)
 		buf = append(buf, []byte("]")...)
 		d.closed = true
 		if n, err, done = d.flush(p, buf); done {
