@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
-	"golang.org/x/exp/slices"
 )
 
 type EncodingEntityReader interface {
