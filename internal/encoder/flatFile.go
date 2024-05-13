@@ -6,14 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"go.uber.org/zap"
 	"io"
 	"strconv"
 	"strings"
 	"time"
 	_ "time/tzdata"
+
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"go.uber.org/zap"
 )
 
 // FlatFileEncoder ********************** ENCODER ****************************************/
@@ -181,7 +182,7 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 	if !d.open {
 		d.open = true
 		d.scanner = bufio.NewScanner(d.reader)
-		//start json array and add context as first entity
+		// start json array and add context as first entity
 		buf = append(buf, []byte("[")...)
 		if n, err, done = d.flush(p, buf); done {
 			return
@@ -195,7 +196,7 @@ func (d *FlatFileDecoder) Read(p []byte) (n int, err error) {
 	for d.scanner.Scan() {
 
 		line := d.scanner.Text()
-		//d.logger.Debugf("Got line : '%s'", line)
+		// d.logger.Debugf("Got line : '%s'", line)
 		var entityProps map[string]interface{}
 		entityProps, err = d.ParseLine(line, d.backend.FlatFileConfig)
 		if err != nil {
@@ -300,14 +301,16 @@ func (d *FlatFileDecoder) convertType(value string, fieldConfig conf.FlatFileFie
 	default:
 		return value, nil
 	}
-
 }
 
 func (d *FlatFileDecoder) ParseLine(line string, config *conf.FlatFileConfig) (map[string]interface{}, error) {
-	var entityProps = make(map[string]interface{}, 0)
+	entityProps := make(map[string]interface{}, 0)
 	for key, field := range config.Fields {
 		value := ""
 		for _, sub := range field.Substring {
+			if sub[1] > len(line) {
+				return nil, errors.New(fmt.Sprintf("substring out of bounds: %+v (line: %v)", field, line))
+			}
 			value += line[sub[0]:sub[1]]
 		}
 		valueWithType, err := d.convertType(value, field)
