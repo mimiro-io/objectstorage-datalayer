@@ -51,6 +51,7 @@ func NewDatasetHandler(lc fx.Lifecycle, e *echo.Echo, logger *zap.SugaredLogger,
 		},
 	})
 }
+
 func (dh *datasetHandler) getChangesHandler(c echo.Context) error {
 	c.Set("changes", true)
 
@@ -121,6 +122,7 @@ func (dh *datasetHandler) datasetHandler(c echo.Context) error {
 	}
 	return dh.datasetStore(c)
 }
+
 func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 	datasetName, _ := url.QueryUnescape(c.Param("dataset"))
 
@@ -164,13 +166,13 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 		if err2 != nil {
 			return err2
 		}
-		state.Start = false      //only start once
-		finalState.Start = false //only start once
+		state.Start = false      // only start once
+		finalState.Start = false // only start once
 
 		return nil
 	}, batchSize, storeConfig.StoreDeleted)
-
 	if err != nil {
+		dh.logger.Errorw(err.Error(), "dataset", datasetName)
 		return echo.NewHTTPError(http.StatusBadRequest, errors.New("could not parse the or process json payload").Error())
 	}
 
@@ -216,7 +218,6 @@ func (dh *datasetHandler) datasetStore(c echo.Context) error {
 		}
 		return nil
 	}, batchSize, storeConfig.StoreDeleted)
-
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.New("could not parse the json payload").Error())
 	}
