@@ -62,6 +62,7 @@ type CsvConfig struct {
 	Order          []string `json:"order"`
 	SkipRows       int      `json:"skiprows"`
 	ValidateFields bool     `json:"validatefields"`
+	CustomFileName string   `json:"customFileName"`
 }
 
 type ParquetConfig struct {
@@ -74,6 +75,7 @@ type FlatFileConfig struct {
 	Fields               map[string]FlatFileField `json:"fields"`
 	FieldOrder           []string                 `json:"fieldOrder"`
 	ContinueOnParseError bool                     `json:"continueOnParseError"`
+	CustomFileName       string                   `json:"customFileName"`
 }
 
 type FlatFileField struct {

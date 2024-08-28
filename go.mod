@@ -1,6 +1,6 @@
 module github.com/mimiro-io/objectstorage-datalayer
 
-go 1.22.3
+go 1.23
 
 require (
 	github.com/Azure/azure-storage-blob-go v0.15.0
