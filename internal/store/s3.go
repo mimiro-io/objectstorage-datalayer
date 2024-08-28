@@ -285,12 +285,20 @@ func (s3s *S3Storage) createKey(entities []*uda.Entity, fullSync bool) string {
 		}
 	}
 
+	filename := ""
+
 	ending := "json"
 	if s3s.config.CsvConfig != nil {
 		ending = "csv"
+		if s3s.config.FlatFileConfig.CustomFileName != "" {
+			filename = fmt.Sprintf("%s%s.%s", recorded, s3s.config.CsvConfig.CustomFileName, ending)
+		}
 	}
 	if s3s.config.FlatFileConfig != nil {
 		ending = "txt"
+		if s3s.config.FlatFileConfig.CustomFileName != "" {
+			filename = fmt.Sprintf("%s%s.%s", recorded, s3s.config.FlatFileConfig.CustomFileName, ending)
+		}
 	}
 	if s3s.config.ParquetConfig != nil {
 		ending = "parquet"
@@ -311,8 +319,9 @@ func (s3s *S3Storage) createKey(entities []*uda.Entity, fullSync bool) string {
 			}
 		}
 	}
-
-	filename := fmt.Sprintf("%s%s.%s", recorded, uuid.New().String(), ending)
+	if filename == "" {
+		filename = fmt.Sprintf("%s%s.%s", recorded, uuid.New().String(), ending)
+	}
 	return fmt.Sprintf("datasets/%s/%s/%s", s3s.dataset, t, filename)
 }
 
