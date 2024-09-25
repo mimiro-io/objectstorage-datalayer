@@ -43,7 +43,7 @@ func (enc *ParquetEncoder) Close() error {
 		}
 		return err
 	}
-	enc.logger.Infof("Closed parquet stream. total flushed: %v", enc.pqWriter.CurrentFileSize())
+	enc.logger.Debugf("Closed parquet stream. total flushed: %v", enc.pqWriter.CurrentFileSize())
 
 	return enc.writer.Close()
 }
@@ -210,7 +210,7 @@ func (enc *ParquetEncoder) Open() error {
 	if enc.backend.ParquetConfig.FlushThreshold > 0 {
 		enc.flushThreshold = enc.backend.ParquetConfig.FlushThreshold
 	}
-	enc.logger.Infof("writing parquet files with flushThreshold %v", enc.flushThreshold)
+	enc.logger.Debugf("writing parquet files with flushThreshold %v", enc.flushThreshold)
 	enc.schemaDef = schemaDef
 
 	enc.pqWriter = goparquet.NewFileWriter(enc.writer, goparquet.WithCompressionCodec(parquet.CompressionCodec_SNAPPY), goparquet.WithSchemaDefinition(schemaDef), goparquet.WithCreator("objectstorage-datalayer"))

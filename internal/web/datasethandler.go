@@ -126,11 +126,11 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 
 	finalState := extractState(c.Request())
 	if finalState.Start {
-		dh.logger.Infow(fmt.Sprintf("Incoming new fullsync request for %v, id %s", datasetName, finalState.Id),
+		dh.logger.Debugw(fmt.Sprintf("Incoming new fullsync request for %v, id %s", datasetName, finalState.Id),
 			"dataset", datasetName)
 	}
 	if finalState.End {
-		dh.logger.Infow(fmt.Sprintf("Incoming finalize fullsync request for %v, id %s", datasetName, finalState.Id),
+		dh.logger.Debugw(fmt.Sprintf("Incoming finalize fullsync request for %v, id %s", datasetName, finalState.Id),
 			"dataset", datasetName)
 	}
 	// we need the "end" flag only in the last step, for everything before in our parse loop we use an un-ended state

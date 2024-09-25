@@ -173,7 +173,7 @@ func (s3s *S3Storage) ExportSchema() error {
 				s3s.logger.Error("Failed to upload ", err)
 				return err
 			}
-			s3s.logger.Info("Successfully uploaded athena schema to ", uploadResult.Location)
+			s3s.logger.Debug("Successfully uploaded athena schema to ", uploadResult.Location)
 		}
 	}
 	return nil
@@ -198,7 +198,7 @@ func NewS3Storage(logger *zap.SugaredLogger, env *conf.Env, config conf.StorageB
 
 	err = s.ExportSchema()
 	if err == nil {
-		logger.Info("exported schema for dataset ", dataset)
+		logger.Debug("exported schema for dataset ", dataset)
 	}
 
 	return s, err
@@ -241,7 +241,7 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if err != nil {
 		s3s.logger.Error("Unable to create store content")
 	}
-	s3s.logger.Infof("Encoded %d entities into %v bytes", len(entities), len(content))
+	s3s.logger.Debugf("Encoded %d entities into %v bytes", len(entities), len(content))
 
 	key := s3s.createKey(entities, false)
 	properties := s3s.config.Properties
