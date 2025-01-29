@@ -28,7 +28,10 @@ require (
 	go.uber.org/zap v1.27.0
 )
 
-require github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066
+require (
+	github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066
+	golang.org/x/text v0.21.0
+)
 
 require (
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
@@ -109,11 +112,10 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.21.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
 	google.golang.org/grpc v1.59.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
