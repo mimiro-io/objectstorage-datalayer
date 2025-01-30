@@ -6,6 +6,7 @@ import (
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
+	"golang.org/x/text/encoding/charmap"
 	"io"
 	"strconv"
 )
@@ -137,6 +138,16 @@ func (dec *CsvDecoder) Read(p []byte) (n int, err error) {
 	if !dec.open {
 		dec.open = true
 		dec.csvreader = csv.NewReader(dec.reader)
+		// set charmap from config
+		encoding := dec.backend.CsvConfig.Encoding
+		for _, enc := range charmap.All {
+			cmap, ok := enc.(*charmap.Charmap)
+			if ok && cmap.String() == encoding {
+				// encode based on user's input
+				dec.csvreader = csv.NewReader(cmap.NewDecoder().Reader(dec.reader))
+			}
+		}
+
 		buf = append(buf, []byte("[")...)
 		if n, err, done = dec.flush(p, buf); done {
 			return

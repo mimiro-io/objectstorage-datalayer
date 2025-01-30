@@ -252,7 +252,7 @@ property name | description
 `athenaCompatible` | reformat json batches as newline-delimited lists of json objects (ndjson). Default false
 `csv` | if not empty, the layer will use a csv encoder to transform entities into csv files. If both parquet and csv config objects are present, parquet has precedence.
 `csv.header` | if true, the csv encoder will prefix csv files with a column header line. default false.
-`csv.encoding` | overide csv file character encoding. default UTF-8
+`csv.encoding` | overide csv file character encoding. default UTF-8 https://pkg.go.dev/golang.org/x/text@v0.21.0/encoding/charmap#Charmap
 `csv.separator` | set a csv delimiter. default is comma. should only be a single character.
 `csv.order` | array of properties to include in given order in csv  file. each array element has to map to a stripped property name in the given entities.
 `csv.customFileName` | sets a custom string after the recorded timestamp in the file name i.e 1723634100068669184-<XXX>.csv when writing to s3.
