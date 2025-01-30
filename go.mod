@@ -87,7 +87,7 @@ require (
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/cli v23.0.3+incompatible // indirect
+	github.com/docker/cli v27.5.1+incompatible // indirect
 	github.com/docker/docker v27.4.1+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -95,12 +95,12 @@ require (
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
+	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gojektech/valkyrie v0.0.0-20190210220504-8f62c1e7ba45 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
