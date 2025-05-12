@@ -1,4 +1,4 @@
-FROM golang:1.23   as builder
+FROM golang:1.23 AS build
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -16,13 +16,9 @@ COPY . .
 RUN go vet ./...
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o server cmd/storage/main.go
 
-FROM alpine:latest
-RUN apk update && apk upgrade --no-cache libcrypto3 libssl3
-RUN apk --no-cache add ca-certificates
+FROM gcr.io/distroless/static-debian12:nonroot
 
-WORKDIR /root/
-
-COPY --from=builder /app/server .
+COPY --from=build /app/server .
 ADD .env .
 ADD resources/default-config.json resources/
 
