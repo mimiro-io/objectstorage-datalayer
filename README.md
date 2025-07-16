@@ -289,6 +289,7 @@ property name | description
 `flatFile.fields.dateLayout` | Must be present for parsing date. Declare with standard go date format layout.
 `flatFile.continueOnParseError` | If set to true, the line parser will log a warning and continue to parse the rest of the file on error. Default: false
 `flatFile.customFileName` | sets a custom string after the recorded timestamp in the file name i.e 1723634100068669184-<XXX>.txt when writing to s3.
+`flatfile.rawRecord` | If set to true, the raw record will be added to the entity as a property called `data`. Default: false
 
 #### Encoders.
 

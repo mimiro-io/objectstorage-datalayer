@@ -319,6 +319,11 @@ func (d *FlatFileDecoder) ParseLine(line string, config *conf.FlatFileConfig) (m
 		}
 		entityProps[key] = valueWithType
 
+		if config.RawRecord {
+			// If raw record is enabled, we just return the whole line as a string
+			entityProps["data"] = line
+			continue
+		}
 	}
 	return entityProps, nil
 }
