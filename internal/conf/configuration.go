@@ -76,6 +76,7 @@ type FlatFileConfig struct {
 	FieldOrder           []string                 `json:"fieldOrder"`
 	ContinueOnParseError bool                     `json:"continueOnParseError"`
 	CustomFileName       string                   `json:"customFileName"`
+	RawRecord            bool                     `json:"rawRecord"`
 }
 
 type FlatFileField struct {
