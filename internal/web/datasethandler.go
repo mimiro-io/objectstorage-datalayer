@@ -171,7 +171,7 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 	}, batchSize, storeConfig.StoreDeleted)
 
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, errors.New("could not parse the or process json payload").Error())
+		return echo.NewHTTPError(http.StatusBadRequest, errors.New(fmt.Sprintf("could not process the json payload: %s", err.Error())).Error())
 	}
 
 	if finalState.End {
