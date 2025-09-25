@@ -1,15 +1,17 @@
 package store
 
 import (
+	"io"
+	"io/ioutil"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
 	"go.uber.org/zap"
-	"io"
-	"io/ioutil"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 type FullSyncState struct {
@@ -40,7 +42,8 @@ func GenerateContent(entities []*uda.Entity, config conf.StorageBackend, logger 
 }
 
 func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
-	if config.OrderType != "desc" || config.OrderType != "asc" {
+	acceptedSortingTypes := []string{"desc", "asc"}
+	if !slices.Contains(acceptedSortingTypes, config.OrderType) {
 		logger.Info("orderType in config not of supported format. Defaulting to ascending order")
 	}
 	if config.OrderBy == "" {
