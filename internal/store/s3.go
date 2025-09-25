@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/aws/aws-sdk-go/aws"
@@ -30,6 +31,7 @@ type S3Storage struct {
 	logger         *zap.SugaredLogger
 	env            *conf.Env
 	config         conf.StorageBackend
+	orderBy        string
 	dataset        string
 	statsd         statsd.ClientInterface
 	uploader       *s3manager.Uploader
@@ -241,6 +243,13 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if err != nil {
 		s3s.logger.Error("Unable to create store content")
 	}
+	if s3s.config.OrderBy != "" {
+		content, err = OrderContent(content, s3s.config, s3s.logger)
+		if err != nil {
+			s3s.logger.Error("Unable to order content")
+		}
+	}
+
 	s3s.logger.Debugf("Encoded %d entities into %v bytes", len(entities), len(content))
 
 	key := s3s.createKey(entities, false)

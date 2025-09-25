@@ -1,10 +1,12 @@
 package store
 
 import (
+	"strings"
+	"testing"
+
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
-	"testing"
 )
 
 func TestConsoleStorage_StoreEntities(t *testing.T) {
@@ -43,4 +45,28 @@ func TestConsoleStorage_StoreEntities(t *testing.T) {
 		t.Error(err)
 	}
 
+}
+func TestOrderContent(t *testing.T) {
+	data := []byte("10000000100002\n10000000200001\n10000000200002\n20000000100002\n20000000100001\n20000000200001\n20000000200002\n10000000100001\n")
+
+	var testDataSorted = []byte("10000000100001\n10000000100002\n10000000200001\n10000000200002\n20000000100001\n20000000100002\n20000000200001\n20000000200002\n")
+	var testDataSortedString string
+	for _, d := range strings.Split(string(testDataSorted[:len(testDataSorted)-1]), "\n") {
+		testDataSortedString += d + "\n"
+	}
+	config := conf.StorageBackend{
+		OrderBy: "0,8:8,12:12,14",
+	}
+	sortedData, err := OrderContent(data, config, zap.NewNop().Sugar())
+	if err != nil {
+		t.Error(err)
+	}
+	var dataSortedString string
+	for _, d := range strings.Split(string(sortedData[:len(sortedData)-1]), "\n") {
+		dataSortedString += d + "\n"
+	}
+
+	if testDataSortedString != dataSortedString {
+		t.Error("Sorting is not correct")
+	}
 }
