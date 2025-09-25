@@ -1,12 +1,11 @@
 package store
 
 import (
-	"strings"
-	"testing"
-
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
+	"strings"
+	"testing"
 )
 
 func TestConsoleStorage_StoreEntities(t *testing.T) {

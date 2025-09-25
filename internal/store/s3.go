@@ -5,22 +5,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/DataDog/datadog-go/statsd"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
+	"go.uber.org/zap"
 	"io"
 	"sort"
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
-
-	"github.com/DataDog/datadog-go/statsd"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
@@ -31,7 +29,6 @@ type S3Storage struct {
 	logger         *zap.SugaredLogger
 	env            *conf.Env
 	config         conf.StorageBackend
-	orderBy        string
 	dataset        string
 	statsd         statsd.ClientInterface
 	uploader       *s3manager.Uploader

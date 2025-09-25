@@ -1,16 +1,15 @@
 package store
 
 import (
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
+	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
+	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
-	"go.uber.org/zap"
 )
 
 type FullSyncState struct {
@@ -25,12 +24,6 @@ type StorageInterface interface {
 	StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error
 	GetEntities() (io.Reader, error)
 	GetChanges(since string) (io.Reader, error)
-}
-type StringParts struct {
-	Original string
-	Part1    string
-	Part2    string
-	Part3    string
 }
 
 func GenerateContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
