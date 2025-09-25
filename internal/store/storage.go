@@ -44,11 +44,9 @@ func GenerateContent(entities []*uda.Entity, config conf.StorageBackend, logger 
 func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
 	acceptedSortingTypes := []string{"desc", "asc"}
 	if !slices.Contains(acceptedSortingTypes, config.OrderType) {
-		logger.Info("orderType in config not of supported format. Defaulting to ascending order")
+		logger.Info("No valid orderType defined. Defaulting to ascending order")
 	}
-	if config.OrderBy == "" {
-		logger.Error("No orderby specified in config")
-	}
+
 	// Parse the orderby string
 	orderBy, err := extractIndexSlice(config.OrderBy)
 	if err != nil {
