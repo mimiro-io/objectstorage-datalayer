@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"slices"
@@ -54,13 +55,20 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 		return entities, err
 	}
 	data := strings.Split(string(entities[:len(entities)-1]), "\n")
-
+	errs := []error{}
 	sort.Slice(data, func(i, j int) bool {
 		var partsI, partsJ int
 		for _, x := range orderBy {
-			partsI, _ = extractParts(data[i], x)
-			partsJ, _ = extractParts(data[j], x)
-
+			partsI, err = extractParts(data[i], x)
+			if err != nil {
+				errs = append(errs, err)
+				logger.Error(fmt.Sprintf("Unable to parse position %v in line %v as an integer", i, x))
+			}
+			partsJ, err = extractParts(data[j], x)
+			if err != nil {
+				errs = append(errs, err)
+				logger.Error(fmt.Sprintf("Unable to parse position %v in line %v as an integer", i, x))
+			}
 			// Comparison of parts
 			if partsI != partsJ {
 				if config.OrderType == "desc" {
@@ -77,7 +85,10 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 			return partsI < partsJ
 		}
 	})
-
+	if len(errs) > 0 {
+		logger.Error("Unable to parse data")
+		return nil, errs[0]
+	}
 	// Reconstruct the entities in sorted order
 	var sortedData []byte
 	for _, s := range data {
