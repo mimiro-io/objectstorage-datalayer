@@ -5,8 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"sort"
 	"strconv"
@@ -15,10 +13,12 @@ import (
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"go.uber.org/zap"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
@@ -241,6 +241,13 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if err != nil {
 		s3s.logger.Error("Unable to create store content")
 	}
+	if len(s3s.config.OrderBy) > 0 {
+		content, err = OrderContent(content, s3s.config, s3s.logger)
+		if err != nil {
+			s3s.logger.Error("Unable to order content")
+		}
+	}
+
 	s3s.logger.Debugf("Encoded %d entities into %v bytes", len(entities), len(content))
 
 	key := s3s.createKey(entities, false)
