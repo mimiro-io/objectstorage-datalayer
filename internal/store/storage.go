@@ -48,18 +48,12 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 		logger.Info("No valid orderType defined. Defaulting to ascending order")
 	}
 
-	// Parse the orderby string
-	orderBy, err := extractIndexSlice(config.OrderBy)
-	if err != nil {
-		logger.Error("Unable to parse orderby string")
-		return entities, err
-	}
 	data := strings.Split(string(entities[:len(entities)-1]), "\n")
 	errs := []error{}
 	sort.Slice(data, func(i, j int) bool {
 		var partsI, partsJ int
-		for _, x := range orderBy {
-			partsI, err = extractParts(data[i], x)
+		for _, x := range config.OrderBy {
+			partsI, err := extractParts(data[i], x)
 			if err != nil {
 				errs = append(errs, err)
 				logger.Error(fmt.Sprintf("Unable to parse position %v in line %v as an integer", i, x))
@@ -102,21 +96,4 @@ func extractParts(s string, i []int) (int, error) {
 		return 0, err
 	}
 	return numPart, nil
-}
-func extractIndexSlice(s string) ([][]int, error) {
-	parts := strings.Split(s, ":")
-	var orderByInt = make([][]int, len(parts))
-	for index, o := range parts {
-		order := strings.Split(o, ",")
-		i, err := strconv.Atoi(order[0])
-		if err != nil {
-			return nil, err
-		}
-		j, err := strconv.Atoi(order[1])
-		if err != nil {
-			return nil, err
-		}
-		orderByInt[index] = []int{i, j}
-	}
-	return orderByInt, nil
 }

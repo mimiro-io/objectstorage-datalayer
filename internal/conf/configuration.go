@@ -20,7 +20,7 @@ type StorageBackend struct {
 	DecodeConfig     *DecodeConfig     `json:"decode"`
 	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
 	Timezone         string            `json:"timezone"`
-	OrderBy          string            `json:"orderBy"`
+	OrderBy          [][]int           `json:"orderBy"`
 	OrderType        string            `json:"orderType"`
 }
 
