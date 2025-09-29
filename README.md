@@ -246,6 +246,8 @@ property name | description
 -- | --
 `dataset` |  name of the dataset.
 `storageType` | `S3` or `Azure`. Note that other types will not produce an error, uploaded data will be logged to server logs instead.
+`orderBy` | A nested array marking which part of each line should be compared. For now, only values that resolve as integers can be sorted. E.g. 'orderBy': [[0,8],[8,12],[12,14]] for three sorting criteria at positions 0-8, 8-12 and 12-14. 
+`orderType` | If orderBy is defined. Supported types are 'desc' or 'asc'. Default to 'asc' if no correct type is defined.
 `stripProps` | only relevant for json encoded datasets. Csv and Parquet will implicitly set this to true. If true, the layer will transform each uploaded entity such that only properties are stored, and all property keys have their prefixes removed. If false, the complete entities are stored. Default false
 `resolveNamespace` | Resolve namespace ref to full uri in id and references. It will **not** resolve namespace in props.
 `storeDeleted` | If true, entities with the deleted flag are included in the stored object. If false, they are filtered out by the layer. Default false. Should only ever be set to true for unstripped json encoded datasets.
