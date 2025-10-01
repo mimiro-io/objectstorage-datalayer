@@ -630,9 +630,11 @@ func (s3s *S3Storage) DeliverOnce(entities []*uda.Entity, key string) error {
 }
 func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 	if s3s.config.DeliverOnceIdNamespace == "" {
+		s3s.logger.Error("DeliverOnceIdNamespace is not set\n")
 		return errors.New("DeliverOnceIdNamespace is not set")
 	}
 	if s3s.config.DeliverOnceUrl == "" {
+		s3s.logger.Error("DeliveryOnceUrl is not set\n")
 		return errors.New("DeliverOnceUrl is not set")
 	}
 	// TODO do a lookup for the DeliverOnceDataset to see if it exists. If not, create it
