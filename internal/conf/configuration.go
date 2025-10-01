@@ -7,21 +7,24 @@ type StorageConfig struct {
 }
 
 type StorageBackend struct {
-	Dataset          string            `json:"dataset"`
-	StorageType      string            `json:"storageType"`
-	StripProps       bool              `json:"stripProps"`
-	ResolveNamespace bool              `json:"resolveNamespace"`
-	StoreDeleted     bool              `json:"storeDeleted"`
-	AthenaCompatible bool              `json:"athenaCompatible"`
-	CsvConfig        *CsvConfig        `json:"csv"`
-	FlatFileConfig   *FlatFileConfig   `json:"flatFile"`
-	ParquetConfig    *ParquetConfig    `json:"parquet"`
-	Properties       PropertiesMapping `json:"props"`
-	DecodeConfig     *DecodeConfig     `json:"decode"`
-	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
-	Timezone         string            `json:"timezone"`
-	OrderBy          [][]int           `json:"orderBy"`
-	OrderType        string            `json:"orderType"`
+	Dataset                string            `json:"dataset"`
+	StorageType            string            `json:"storageType"`
+	StripProps             bool              `json:"stripProps"`
+	ResolveNamespace       bool              `json:"resolveNamespace"`
+	StoreDeleted           bool              `json:"storeDeleted"`
+	AthenaCompatible       bool              `json:"athenaCompatible"`
+	CsvConfig              *CsvConfig        `json:"csv"`
+	FlatFileConfig         *FlatFileConfig   `json:"flatFile"`
+	ParquetConfig          *ParquetConfig    `json:"parquet"`
+	Properties             PropertiesMapping `json:"props"`
+	DecodeConfig           *DecodeConfig     `json:"decode"`
+	LocalFileConfig        *LocalFileConfig  `json:"localfileconfig"`
+	Timezone               string            `json:"timezone"`
+	OrderBy                [][]int           `json:"orderBy"`
+	DeliverOnceDataset     string            `json:"deliverOnceDataset"`
+	DeliverOnceIdNamespace string            `json:"deliverOnceIdNamespace"`
+	DeliverOnceUrl         string            `json:"deliverOnceUrl"`
+	OrderType              string            `json:"orderType"`
 }
 
 type DecodeConfig struct {

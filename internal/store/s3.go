@@ -3,11 +3,14 @@ package store
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +28,14 @@ import (
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/schema"
 )
+
+type Response struct {
+	ID         string         `json:"id"`
+	References map[string]any `json:"refs,omitempty"`
+	Properties map[string]any `json:"props,omitempty"`
+	Recorded   int            `json:"recorded,omitempty"`
+	Namespaces map[string]any `json:"namespaces,omitempty"`
+}
 
 type S3Storage struct {
 	logger         *zap.SugaredLogger
@@ -237,6 +248,13 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if len(entities) == 0 {
 		return nil
 	}
+	if s3s.config.DeliverOnceDataset != "" {
+		err := s3s.DeliverOnceVariableCheck()
+		if err != nil {
+			return err
+		}
+	}
+
 	content, err := GenerateContent(entities, s3s.config, s3s.logger)
 	if err != nil {
 		s3s.logger.Error("Unable to create store content")
@@ -275,6 +293,14 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 		return err
 	}
 	s3s.logger.Info("Successfully uploaded to ", result.Location)
+
+	if s3s.config.DeliverOnceDataset != "" {
+		err = s3s.DeliverOnce(entities, key)
+		if err != nil {
+			s3s.logger.Error("Unable to deliver once")
+			return err
+		}
+	}
 	return nil
 }
 
@@ -567,4 +593,48 @@ func (s3s *S3Storage) findObjects(folder string, since string) ([]FileObject, er
 	}
 	return nil, errors.New(fmt.Sprintf(
 		"nothing found in folder %v of dataset %v", folder, s3s.config.Dataset))
+}
+func (s3s *S3Storage) DeliverOnce(entities []*uda.Entity, key string) error {
+	url := "http://localhost:8080/datasets/foo/entities"
+	fileName := strings.Split(key, "/")
+	BatchId := strings.Split(fileName[len(fileName)-1], ".")[0]
+	payload := make([]Response, 0, len(entities)+1)
+	Context := Response{ID: "@context", Namespaces: map[string]any{"_": "http://data.mimiro.io/s3/"}}
+
+	payload = append(payload, Context)
+	for _, entity := range entities {
+		id := fmt.Sprintf("%v%v", s3s.config.DeliverOnceIdNamespace, strings.Split(entity.ID, ":")[1])
+		entity := Response{ID: id, Properties: map[string]any{"BatchId": BatchId}, References: map[string]any{}}
+		payload = append(payload, entity)
+	}
+	payloadJson, err := json.Marshal(payload)
+	if err != nil {
+		s3s.logger.Error("Failed to marshal payload: ", err)
+		return err
+	}
+	req, err := http.NewRequest("POST", url, io.Reader(bytes.NewBuffer(payloadJson)))
+	if err != nil {
+		s3s.logger.Error("Failed to create request: ", err)
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	_, err = client.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	s3s.logger.Info("Successfully sent deliver once callback to ", url)
+	return nil
+}
+func (s3s *S3Storage) DeliverOnceVariableCheck() error {
+	if s3s.config.DeliverOnceIdNamespace == "" {
+		return errors.New("DeliverOnceIdNamespace is not set")
+	}
+	if s3s.config.DeliverOnceUrl == "" {
+		return errors.New("DeliverOnceUrl is not set")
+	}
+	// TODO do a lookup for the DeliverOnceDataset to see if it exists. If not, create it
+	return nil
 }
