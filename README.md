@@ -313,7 +313,6 @@ property name | description
 `DeliverOnceConfig.DefaultNamespace` | The namespace for properties in the entities.
 `DeliverOnceConfig.BaseUrl` | Audience URL, used for local testing.
 `DeliverOnceConfig.ClientSecret` | ClientSecret for auth. The value should represent the secrets name in environmental variables.
-`flatfile.rawRecord` | If set to true, the raw record will be added to the entity as a property called `data`. Default: false
 
 #### Encoders.
 
