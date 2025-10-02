@@ -4,10 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/DataDog/datadog-go/statsd"
-	"github.com/google/uuid"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
-	_ "github.com/spf13/cast"
 	"io"
 	"os"
 	"path/filepath"
@@ -15,6 +11,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/DataDog/datadog-go/statsd"
+	"github.com/google/uuid"
+	"github.com/mimiro-io/datahub-client-sdk-go"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
+	_ "github.com/spf13/cast"
 
 	"go.uber.org/zap"
 
@@ -34,6 +36,18 @@ type LocalStorage struct {
 	waitGroup      sync.WaitGroup
 	cancelFunc     context.CancelFunc
 	fullsyncTimout *time.Timer
+}
+
+func (ls *LocalStorage) DeliverOnceClientInit() (datahub.Client, error) {
+	return datahub.Client{}, errors.New("DeliverOnceClientInit not supported for LocalStorage")
+}
+
+func (ls *LocalStorage) DeliverOnceVariableCheck() error {
+	return errors.New("DeliverOnceVariableCheck not supported for LocalStorage")
+}
+
+func (ls *LocalStorage) DeliverOnce(entities []*uda.Entity, client datahub.Client) error {
+	return errors.New("DeliverOnceVariableCheck not supported for LocalStorage")
 }
 
 type FileInfo struct {
