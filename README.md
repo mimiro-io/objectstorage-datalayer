@@ -649,3 +649,7 @@ When reading parquet files it adds a property called ```__index_level_0__``` whi
 
 Because Parquet data needs to be decoded from the Parquet format and compression, it can’t be directly mapped from disk. Thus the memory_map option might perform better on some systems but won’t help much with resident memory consumption.
 There will therefore be a max size on the parquet file.
+
+### Deliver Once feature
+
+The Deliver Once feature is allows you to store data tha has been successfully sent to storage back to the datahub. This allows you to lookup every successfully sent entity before sending data to the datalayer to ensure data is delivered only once. This is especially useful in non-idempotent scenarios where you cannot send data that has already been sent again. This feature is only supported for S3 storage backends.
