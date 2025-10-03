@@ -311,7 +311,6 @@ property name | description
 `DeliverOnceConfig.Dataset` | The dataset in the datahub data should be sent to.
 `DeliverOnceConfig.IdNamespace` | The namespace for each entity's id.
 `DeliverOnceConfig.DefaultNamespace` | The namespace for properties in the entities.
-`DeliverOnceConfig.BaseUrl` | Audience URL, used for local testing.
 `DeliverOnceConfig.ClientSecret` | ClientSecret for auth. The value should represent the secrets name in environmental variables.
 
 #### Encoders.

@@ -601,8 +601,7 @@ func (s3s *S3Storage) DeliverOnce(entities []*uda.Entity, client datahub.Client)
 
 }
 func (s3s *S3Storage) DeliverOnceClientInit() (datahub.Client, error) {
-
-	client, err := datahub.NewClient(s3s.config.DeliverOnceConfig.BaseUrl)
+	client, err := datahub.NewClient(s3s.config.DeliverOnceConfig.Audience)
 	if err != nil {
 		s3s.logger.Error("Failed to create client: ", err)
 		return datahub.Client{}, err
@@ -629,10 +628,6 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 			s3s.logger.Error("DeliverOnce AuthUrl is not set\n")
 			return errors.New("DeliverOnce AuthUrl is not set")
 		}
-		if s3s.config.DeliverOnceConfig.Audience == "" {
-			s3s.logger.Error("DeliverOnce Audience is not set\n")
-			return errors.New("DeliverOnce Audience is not set")
-		}
 		if s3s.config.DeliverOnceConfig.ClientId == "" {
 			s3s.logger.Error("DeliverOnce ClientId is not set\n")
 			return errors.New("DeliverOnce ClientId is not set")
@@ -646,9 +641,9 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 		s3s.logger.Error("DeliverOnce Dataset is not set\n")
 		return errors.New("DeliverOnce Dataset is not set")
 	}
-	if s3s.config.DeliverOnceConfig.BaseUrl == "" {
-		s3s.logger.Error("DeliverOnce BaseUrl is not set\n")
-		return errors.New("DeliverOnce BaseUrl is not set")
+	if s3s.config.DeliverOnceConfig.Audience == "" {
+		s3s.logger.Error("DeliverOnce Audience is not set\n")
+		return errors.New("DeliverOnce Audience is not set")
 	}
 	if s3s.config.DeliverOnceConfig.IdNamespace == "" {
 		s3s.logger.Error("DeliverOnce IdNamespace is not set\n")
@@ -661,18 +656,10 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 	return nil
 }
 func (s3s *S3Storage) EnsureDeliverOnceDatasetExist(client datahub.Client) error {
-	dataset, err := client.GetDataset(s3s.config.DeliverOnceConfig.Dataset)
+	_, err := client.GetDataset(s3s.config.DeliverOnceConfig.Dataset)
 	if err != nil {
 		s3s.logger.Info("Deliver Once dataset does not exist. Creating it")
-		err := client.AddDataset(s3s.config.DeliverOnceConfig.Dataset, []string{})
-		if err != nil {
-			s3s.logger.Error("Failed to create Deliver Once dataset: ", err)
-			return err
-		} else {
-			s3s.logger.Info("Deliver Once dataset '%v' created", s3s.config.DeliverOnceConfig.Dataset)
-		}
-	} else {
-		s3s.logger.Info("Deliver Once dataset '%v' found", dataset.Name)
+		return err
 	}
 	return nil
 }

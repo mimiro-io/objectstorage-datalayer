@@ -52,7 +52,6 @@ type DeliverOnceConfig struct {
 	Dataset          string  `json:"dataset"`
 	IdNamespace      string  `json:"idNamespace"`
 	DefaultNamespace string  `json:"defaultNamespace"`
-	BaseUrl          string  `json:"baseUrl"`
 	ClientSecret     *string `json:"clientSecret,omitempty"`
 }
 
