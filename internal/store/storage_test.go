@@ -99,8 +99,7 @@ func TestDeliverOnceVariableCheckMissingVariable(t *testing.T) {
 				Enabled:          true,
 				Dataset:          "",
 				IdNamespace:      "http://data.mimiro.io/e360/milk_control_labels/",
-				DefaultNamespace: "http://data.mimiro.io/s3/",
-				BaseUrl:          "http://localhost:8080"},
+				DefaultNamespace: "http://data.mimiro.io/s3/"},
 		},
 	}
 	err := storage.DeliverOnceVariableCheck()
@@ -118,8 +117,7 @@ func TestDeliverOnceVariableCheckAllVariables(t *testing.T) {
 				Enabled:          true,
 				Dataset:          "foo",
 				IdNamespace:      "http://data.mimiro.io/e360/milk_control_labels/",
-				DefaultNamespace: "http://data.mimiro.io/s3/",
-				BaseUrl:          "http://localhost:8080"},
+				DefaultNamespace: "http://data.mimiro.io/s3/"},
 		},
 	}
 	err := storage.DeliverOnceVariableCheck()
