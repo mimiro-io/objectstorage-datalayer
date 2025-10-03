@@ -7,26 +7,22 @@ type StorageConfig struct {
 }
 
 type StorageBackend struct {
-	Dataset                     string            `json:"dataset"`
-	StorageType                 string            `json:"storageType"`
-	StripProps                  bool              `json:"stripProps"`
-	ResolveNamespace            bool              `json:"resolveNamespace"`
-	StoreDeleted                bool              `json:"storeDeleted"`
-	AthenaCompatible            bool              `json:"athenaCompatible"`
-	CsvConfig                   *CsvConfig        `json:"csv"`
-	FlatFileConfig              *FlatFileConfig   `json:"flatFile"`
-	ParquetConfig               *ParquetConfig    `json:"parquet"`
-	Properties                  PropertiesMapping `json:"props"`
-	DecodeConfig                *DecodeConfig     `json:"decode"`
-	LocalFileConfig             *LocalFileConfig  `json:"localfileconfig"`
-	Timezone                    string            `json:"timezone"`
-	OrderBy                     [][]int           `json:"orderBy"`
-	DeliverOnceConfig           DeliverOnceConfig `json:"deliverOnceConfig"`
-	DeliverOnceDataset          string            `json:"deliverOnceDataset"`
-	DeliverOnceIdNamespace      string            `json:"deliverOnceIdNamespace"`
-	DeliverOnceDefaultNamespace string            `json:"deliverOnceDefaultNamespace"`
-	DeliverOnceBaseUrl          string            `json:"deliverOnceBaseUrl"`
-	OrderType                   string            `json:"orderType"`
+	Dataset           string            `json:"dataset"`
+	StorageType       string            `json:"storageType"`
+	StripProps        bool              `json:"stripProps"`
+	ResolveNamespace  bool              `json:"resolveNamespace"`
+	StoreDeleted      bool              `json:"storeDeleted"`
+	AthenaCompatible  bool              `json:"athenaCompatible"`
+	CsvConfig         *CsvConfig        `json:"csv"`
+	FlatFileConfig    *FlatFileConfig   `json:"flatFile"`
+	ParquetConfig     *ParquetConfig    `json:"parquet"`
+	Properties        PropertiesMapping `json:"props"`
+	DecodeConfig      *DecodeConfig     `json:"decode"`
+	LocalFileConfig   *LocalFileConfig  `json:"localfileconfig"`
+	Timezone          string            `json:"timezone"`
+	OrderBy           [][]int           `json:"orderBy"`
+	DeliverOnceConfig DeliverOnceConfig `json:"deliverOnceConfig"`
+	OrderType         string            `json:"orderType"`
 }
 
 type DecodeConfig struct {
