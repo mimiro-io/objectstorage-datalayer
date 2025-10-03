@@ -115,6 +115,7 @@ func TestDeliverOnceVariableCheckAllVariables(t *testing.T) {
 		config: conf.StorageBackend{
 			DeliverOnceConfig: conf.DeliverOnceConfig{
 				Enabled:          true,
+				Audience:         "foo",
 				Dataset:          "foo",
 				IdNamespace:      "http://data.mimiro.io/e360/milk_control_labels/",
 				DefaultNamespace: "http://data.mimiro.io/s3/"},
