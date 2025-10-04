@@ -256,8 +256,8 @@ github.com/mattn/go-runewidth v0.0.10/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRC
 github.com/mattn/goveralls v0.0.6/go.mod h1:h8b4ow6FxSPMQHF6o2ve3qsclnffZjYTNEKmLesRwqw=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2 h1:yVCLo4+ACVroOEr4iFU1iH46Ldlzz2rTuu18Ra7M8sU=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.11.2/go.mod h1:VzB2VoMh1Y32/QqDfg9ZJYHj99oM4LiGtqPZydTiQSQ=
-github.com/mimiro-io/datahub-client-sdk-go v0.1.8 h1:WR4qpBmc817uTk3NW3yr2HwCf8KPd6HBzb/UH30RT78=
-github.com/mimiro-io/datahub-client-sdk-go v0.1.8/go.mod h1:4t/sP5yYKTDrB87hUIQ/lA12JWNvyrr7MDh01eLXtII=
+github.com/mimiro-io/datahub-client-sdk-go v0.1.9 h1:Tpsnl5ImlK0yCCDp2p0rprf5erWOWOOO27oTg6iYQWk=
+github.com/mimiro-io/datahub-client-sdk-go v0.1.9/go.mod h1:Yiy5xvhIdFh7+uUDcDnumKA0OS9T4JbCwQPWSCSSZZE=
 github.com/mimiro-io/entity-graph-data-model v0.7.9 h1:XWoYd1Ir9cBKfUPiPLEQWlepk6IXOfGlj3egsROvRDM=
 github.com/mimiro-io/entity-graph-data-model v0.7.9/go.mod h1:A76+PPQYwU1UkAl6OPcxh63gCnCIHXd47JLbTQxLNRA=
 github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066 h1:fieRtrTLC4yaiFHlVsnielIotSXPpxt9SCRosGFWCFQ=
@@ -437,8 +437,8 @@ golang.org/x/net v0.0.0-20201021035429-f5854403a974/go.mod h1:sp8m0HH+o8qH0wwXwY
 golang.org/x/net v0.0.0-20210610132358-84b48f89b13b/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/net v0.38.0 h1:vRMAPTMaeGqVhG5QyLJHqNDwecKTomGeqbnfZyKlBI8=
 golang.org/x/net v0.38.0/go.mod h1:ivrbrMbzFq5J41QOQh0siUuly180yBYtLp+CKbEaFx8=
-golang.org/x/oauth2 v0.24.0 h1:KTBBxWqUa0ykRPLtV69rRto9TLXcqYkeswu48x/gvNE=
-golang.org/x/oauth2 v0.24.0/go.mod h1:XYTD2NtWslqkgxebSiOHnXEap4TF09sJSc7H1sXbhtI=
+golang.org/x/oauth2 v0.27.0 h1:da9Vo7/tDv5RH/7nZDz1eMGS/q1Vv1N/7FCrBhI9I3M=
+golang.org/x/oauth2 v0.27.0/go.mod h1:onh5ek6nERTohokkhCD/y2cV4Do3fxFHFuAejCkRWT8=
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/mimiro-io/datahub-client-sdk-go v0.1.8
+	github.com/mimiro-io/datahub-client-sdk-go v0.1.9
 	github.com/mimiro-io/entity-graph-data-model v0.7.9
 	github.com/mimiro-io/internal-go-util v0.0.0-20230104075648-dc4d57772066
 	golang.org/x/text v0.23.0
@@ -166,7 +166,7 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.38.0 // indirect
-	golang.org/x/oauth2 v0.24.0 // indirect
+	golang.org/x/oauth2 v0.27.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
