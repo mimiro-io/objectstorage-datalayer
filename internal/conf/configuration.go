@@ -7,21 +7,22 @@ type StorageConfig struct {
 }
 
 type StorageBackend struct {
-	Dataset          string            `json:"dataset"`
-	StorageType      string            `json:"storageType"`
-	StripProps       bool              `json:"stripProps"`
-	ResolveNamespace bool              `json:"resolveNamespace"`
-	StoreDeleted     bool              `json:"storeDeleted"`
-	AthenaCompatible bool              `json:"athenaCompatible"`
-	CsvConfig        *CsvConfig        `json:"csv"`
-	FlatFileConfig   *FlatFileConfig   `json:"flatFile"`
-	ParquetConfig    *ParquetConfig    `json:"parquet"`
-	Properties       PropertiesMapping `json:"props"`
-	DecodeConfig     *DecodeConfig     `json:"decode"`
-	LocalFileConfig  *LocalFileConfig  `json:"localfileconfig"`
-	Timezone         string            `json:"timezone"`
-	OrderBy          [][]int           `json:"orderBy"`
-	OrderType        string            `json:"orderType"`
+	Dataset           string            `json:"dataset"`
+	StorageType       string            `json:"storageType"`
+	StripProps        bool              `json:"stripProps"`
+	ResolveNamespace  bool              `json:"resolveNamespace"`
+	StoreDeleted      bool              `json:"storeDeleted"`
+	AthenaCompatible  bool              `json:"athenaCompatible"`
+	CsvConfig         *CsvConfig        `json:"csv"`
+	FlatFileConfig    *FlatFileConfig   `json:"flatFile"`
+	ParquetConfig     *ParquetConfig    `json:"parquet"`
+	Properties        PropertiesMapping `json:"props"`
+	DecodeConfig      *DecodeConfig     `json:"decode"`
+	LocalFileConfig   *LocalFileConfig  `json:"localfileconfig"`
+	Timezone          string            `json:"timezone"`
+	OrderBy           [][]int           `json:"orderBy"`
+	DeliverOnceConfig DeliverOnceConfig `json:"deliverOnceConfig"`
+	OrderType         string            `json:"orderType"`
 }
 
 type DecodeConfig struct {
@@ -41,6 +42,17 @@ type DecodeConfig struct {
 type LocalFileConfig struct {
 	RootFolder string `json:"rootfolder"`
 	FileSuffix string `json:"filesuffix"`
+}
+
+type DeliverOnceConfig struct {
+	AuthUrl          string  `json:"authUrl"`
+	Audience         string  `json:"audience"`
+	ClientId         string  `json:"clientId"`
+	Enabled          bool    `json:"enabled"`
+	Dataset          string  `json:"dataset"`
+	IdNamespace      string  `json:"idNamespace"`
+	DefaultNamespace string  `json:"defaultNamespace"`
+	ClientSecret     *string `json:"clientSecret,omitempty"`
 }
 
 type PropertiesMapping struct {

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
+	"github.com/mimiro-io/datahub-client-sdk-go"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
@@ -209,7 +210,27 @@ func (dh *datasetHandler) datasetStore(c echo.Context) error {
 		if storeConfig.ResolveNamespace {
 			entities = uda.ExpandUris(entities, entityContext)
 		}
+		var deliverOnceClient datahub.Client
+		if storeConfig.DeliverOnceConfig.Enabled {
+			err := storage.DeliverOnceVariableCheck()
+
+			if err != nil {
+				return err
+			}
+			client, err := storage.DeliverOnceClientInit()
+			if err != nil {
+				return err
+			}
+			deliverOnceClient = client
+		}
 		err2 := storage.StoreEntities(entities)
+
+		if storeConfig.DeliverOnceConfig.Enabled {
+			err := storage.DeliverOnce(entities, deliverOnceClient)
+			if err != nil {
+				return err
+			}
+		}
 
 		if err2 != nil {
 			return err2

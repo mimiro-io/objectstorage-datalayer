@@ -1,10 +1,11 @@
 package entity
 
 import (
-	"github.com/bcicen/jstream"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"strconv"
+
+	"github.com/bcicen/jstream"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 )
 
 func ParseStream(reader io.Reader, emitEntities func(entities []*uda.Entity, entityContext *uda.Context) error, batchSize int, storeDeleted bool) error {

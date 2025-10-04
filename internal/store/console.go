@@ -2,16 +2,30 @@ package store
 
 import (
 	"errors"
+	"io"
+
+	"github.com/mimiro-io/datahub-client-sdk-go"
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
-	"io"
 )
 
 type ConsoleStorage struct {
 	Logger *zap.SugaredLogger
 	env    *conf.Env
 	config conf.StorageBackend
+}
+
+func (consoleStorage *ConsoleStorage) DeliverOnceClientInit() (datahub.Client, error) {
+	return datahub.Client{}, errors.New("DeliverOnceClientInit not supported for ConsoleStorage")
+}
+
+func (consoleStorage *ConsoleStorage) DeliverOnceVariableCheck() error {
+	return errors.New("DeliverOnceVariableCheck not supported for ConsoleStorage")
+}
+
+func (consoleStorage *ConsoleStorage) DeliverOnce(entities []*uda.Entity, client datahub.Client) error {
+	return errors.New("DeliverOnce not supported for ConsoleStorage")
 }
 
 func (consoleStorage *ConsoleStorage) GetEntities() (io.Reader, error) {

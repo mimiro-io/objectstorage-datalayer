@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/json"
-	"github.com/spf13/viper"
-	"go.uber.org/fx"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/spf13/viper"
+	"go.uber.org/fx"
 
 	"github.com/mimiro-io/objectstorage-datalayer/internal/security"
 
@@ -118,6 +119,15 @@ func (conf *ConfigurationManager) load() {
 func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageConfig {
 	updatedStorageBackend := []StorageBackend{}
 	for _, mapping := range config.StorageBackends {
+		if mapping.DeliverOnceConfig.Enabled {
+			secretFromDeliverOnce := mapping.DeliverOnceConfig.ClientSecret
+			if secretFromDeliverOnce != nil && *secretFromDeliverOnce != "" {
+				deliverOnceSecretFromEnvironment := viper.GetString(*secretFromDeliverOnce)
+				if deliverOnceSecretFromEnvironment != "" {
+					mapping.DeliverOnceConfig.ClientSecret = &deliverOnceSecretFromEnvironment
+				}
+			}
+		}
 		secretFromProperties := mapping.Properties.Secret
 		if secretFromProperties != nil && *secretFromProperties != "" {
 			secretFromEnvironment := viper.GetString(*secretFromProperties)
