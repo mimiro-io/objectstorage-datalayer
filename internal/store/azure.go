@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"log"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/mimiro-io/datahub-client-sdk-go"
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
 	"github.com/DataDog/datadog-go/statsd"
@@ -25,6 +27,18 @@ type AzureStorage struct {
 	config  conf.StorageBackend
 	statsd  statsd.ClientInterface
 	dataset string
+}
+
+func (azStorage *AzureStorage) DeliverOnceClientInit() (datahub.Client, error) {
+	return datahub.Client{}, errors.New("DeliverOnceClientInit not supported for AzureStorage")
+}
+
+func (azStorage *AzureStorage) DeliverOnceVariableCheck() error {
+	return errors.New("DeliverOnceVariableCheck not supported for AzureStorage")
+}
+
+func (azStorage *AzureStorage) DeliverOnce(entities []*uda.Entity, client datahub.Client) error {
+	return errors.New("DeliverOnce not supported for AzureStorage")
 }
 
 func (azStorage *AzureStorage) GetEntities() (io.Reader, error) {

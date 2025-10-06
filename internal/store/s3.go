@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	_ "net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +20,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/google/uuid"
+	datahub "github.com/mimiro-io/datahub-client-sdk-go"
+	egdm "github.com/mimiro-io/entity-graph-data-model"
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"go.uber.org/zap"
 
@@ -567,4 +571,95 @@ func (s3s *S3Storage) findObjects(folder string, since string) ([]FileObject, er
 	}
 	return nil, errors.New(fmt.Sprintf(
 		"nothing found in folder %v of dataset %v", folder, s3s.config.Dataset))
+}
+func (s3s *S3Storage) DeliverOnce(entities []*uda.Entity, client datahub.Client) error {
+	namespaceManager := egdm.NewNamespaceContext()
+	ec := egdm.NewEntityCollection(namespaceManager)
+
+	key := s3s.createKey(entities, false)
+	for _, entity := range entities {
+		id := fmt.Sprintf("%v%v", s3s.config.DeliverOnceConfig.IdNamespace, strings.Split(entity.ID, ":")[1])
+		prefixedId, err := namespaceManager.AssertPrefixedIdentifierFromURI(id)
+		if err != nil {
+			s3s.logger.Error("Failed to assert prefixed identifier from URI: ", err)
+			return err
+		}
+		newEntity := egdm.NewEntity().SetID(prefixedId)
+		newEntity.Properties = map[string]any{s3s.config.DeliverOnceConfig.DefaultNamespace + "S3FileLoc": key}
+		newEntity.References = map[string]any{}
+		err = ec.AddEntity(newEntity)
+	}
+
+	err := client.StoreEntities(s3s.config.DeliverOnceConfig.Dataset, ec)
+	if err != nil {
+		s3s.logger.Error("Failed to create client: ", err)
+		return err
+	}
+
+	s3s.logger.Info("Successfully sent deliver once callback to ", s3s.config.DeliverOnceConfig.Dataset)
+	return nil
+
+}
+func (s3s *S3Storage) DeliverOnceClientInit() (datahub.Client, error) {
+	client, err := datahub.NewClient(s3s.config.DeliverOnceConfig.Audience)
+	if err != nil {
+		s3s.logger.Error("Failed to create client: ", err)
+		return datahub.Client{}, err
+	}
+	if s3s.env.Env != "local" {
+		client.WithClientKeyAndSecretAuth(s3s.config.DeliverOnceConfig.AuthUrl, s3s.config.DeliverOnceConfig.Audience, s3s.config.DeliverOnceConfig.ClientId, *s3s.config.DeliverOnceConfig.ClientSecret)
+		err = client.Authenticate()
+		if err != nil {
+			s3s.logger.Error("Failed to authenticate: ", err)
+			return datahub.Client{}, err
+		}
+	}
+	err = s3s.EnsureDeliverOnceDatasetExist(*client)
+	if err != nil {
+		s3s.logger.Error("Failed to ensure Deliver Once dataset exists: ", err)
+		return datahub.Client{}, err
+	}
+	return *client, nil
+}
+
+func (s3s *S3Storage) DeliverOnceVariableCheck() error {
+	if s3s.env.Env != "local" {
+		if s3s.config.DeliverOnceConfig.AuthUrl == "" {
+			s3s.logger.Error("DeliverOnce AuthUrl is not set\n")
+			return errors.New("DeliverOnce AuthUrl is not set")
+		}
+		if s3s.config.DeliverOnceConfig.ClientId == "" {
+			s3s.logger.Error("DeliverOnce ClientId is not set\n")
+			return errors.New("DeliverOnce ClientId is not set")
+		}
+		if *s3s.config.DeliverOnceConfig.ClientSecret == "" {
+			s3s.logger.Error("DeliverOnce ClientSecret is not set\n")
+			return errors.New("DeliverOnce ClientSecret is not set")
+		}
+	}
+	if s3s.config.DeliverOnceConfig.Dataset == "" {
+		s3s.logger.Error("DeliverOnce Dataset is not set\n")
+		return errors.New("DeliverOnce Dataset is not set")
+	}
+	if s3s.config.DeliverOnceConfig.Audience == "" {
+		s3s.logger.Error("DeliverOnce Audience is not set\n")
+		return errors.New("DeliverOnce Audience is not set")
+	}
+	if s3s.config.DeliverOnceConfig.IdNamespace == "" {
+		s3s.logger.Error("DeliverOnce IdNamespace is not set\n")
+		return errors.New("DeliverOnce IdNamespace is not set")
+	}
+	if s3s.config.DeliverOnceConfig.DefaultNamespace == "" {
+		s3s.logger.Error("DeliverOnce DefaultNamespace is not set\n")
+		return errors.New("DeliverOnce DefaultNamespace is not set")
+	}
+	return nil
+}
+func (s3s *S3Storage) EnsureDeliverOnceDatasetExist(client datahub.Client) error {
+	_, err := client.GetDataset(s3s.config.DeliverOnceConfig.Dataset)
+	if err != nil {
+		s3s.logger.Info("Deliver Once dataset does not exist. Creating it")
+		return err
+	}
+	return nil
 }

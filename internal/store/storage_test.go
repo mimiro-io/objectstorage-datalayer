@@ -89,3 +89,40 @@ func TestOrderContentNoIntError(t *testing.T) {
 		t.Error("Expected error, got none")
 	}
 }
+func TestDeliverOnceVariableCheckMissingVariable(t *testing.T) {
+	var env string = "local"
+	storage := S3Storage{
+		logger: zap.NewNop().Sugar(),
+		env:    &conf.Env{Env: env},
+		config: conf.StorageBackend{
+			DeliverOnceConfig: conf.DeliverOnceConfig{
+				Enabled:          true,
+				Dataset:          "<Dataset>",
+				IdNamespace:      "<IdNamespace>",
+				DefaultNamespace: "<DefaultNamespace>"},
+		},
+	}
+	err := storage.DeliverOnceVariableCheck()
+	if err == nil {
+		t.Error(err)
+	}
+}
+func TestDeliverOnceVariableCheckAllVariables(t *testing.T) {
+	var env string = "local"
+	storage := S3Storage{
+		logger: zap.NewNop().Sugar(),
+		env:    &conf.Env{Env: env},
+		config: conf.StorageBackend{
+			DeliverOnceConfig: conf.DeliverOnceConfig{
+				Enabled:          true,
+				Audience:         "<Audience>",
+				Dataset:          "<Dataset>",
+				IdNamespace:      "<IdNamespace>",
+				DefaultNamespace: "<DefaultNamespace>"},
+		},
+	}
+	err := storage.DeliverOnceVariableCheck()
+	if err != nil {
+		t.Error(err)
+	}
+}

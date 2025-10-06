@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mimiro-io/datahub-client-sdk-go"
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/encoder"
@@ -23,6 +24,9 @@ type FullSyncState struct {
 
 type StorageInterface interface {
 	GetConfig() conf.StorageBackend
+	DeliverOnceClientInit() (datahub.Client, error)
+	DeliverOnceVariableCheck() error
+	DeliverOnce(entities []*uda.Entity, client datahub.Client) error
 	StoreEntities(entities []*uda.Entity) error
 	StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error
 	GetEntities() (io.Reader, error)
