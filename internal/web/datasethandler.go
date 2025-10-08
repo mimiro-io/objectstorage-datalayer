@@ -123,6 +123,7 @@ func (dh *datasetHandler) datasetHandler(c echo.Context) error {
 	return dh.datasetStore(c)
 }
 func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
+
 	datasetName, _ := url.QueryUnescape(c.Param("dataset"))
 
 	finalState := extractState(c.Request())
@@ -145,7 +146,10 @@ func (dh *datasetHandler) datasetStoreFullSync(c echo.Context) error {
 	}
 
 	storeConfig := storage.GetConfig()
-
+	if storeConfig.DeliverOnceConfig.Enabled {
+		dh.logger.Errorf("full sync not supported with deliver once")
+		return echo.NewHTTPError(http.StatusBadRequest, errors.New("full sync not supported with deliver once").Error())
+	}
 	if !strings.HasPrefix(strings.ToLower(storeConfig.StorageType), "s3") {
 		return echo.NewHTTPError(http.StatusBadRequest, errors.New("full sync not supported on dataset type").Error())
 	}
