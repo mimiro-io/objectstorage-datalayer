@@ -110,12 +110,12 @@ func TestDeliverOnceVariableCheckMissingVariable(t *testing.T) {
 func TestDeliverOnceVariableCheckAllVariables(t *testing.T) {
 	var env string = "local"
 	storage := S3Storage{
-		logger: zap.NewNop().Sugar(),
-		env:    &conf.Env{Env: env},
+		logger:            zap.NewNop().Sugar(),
+		env:               &conf.Env{Env: env},
+		datahubAuthConfig: conf.DatahubAuthConfig{Audience: "audience"},
 		config: conf.StorageBackend{
 			DeliverOnceConfig: conf.DeliverOnceConfig{
 				Enabled:          true,
-				Audience:         "<Audience>",
 				Dataset:          "<Dataset>",
 				IdNamespace:      "<IdNamespace>",
 				DefaultNamespace: "<DefaultNamespace>"},
