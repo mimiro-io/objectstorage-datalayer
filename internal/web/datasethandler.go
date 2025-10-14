@@ -205,8 +205,6 @@ func (dh *datasetHandler) datasetStore(c echo.Context) error {
 	defer dh.storages.Close(datasetName)
 
 	storeConfig := storage.GetConfig()
-	foo := conf.StorageConfig{}
-	fmt.Sprintf("%+v", foo)
 
 	// parse it
 	batchSize := 10000
