@@ -139,7 +139,12 @@ The general shape of a layer configuration file looks like this:
         {"dataset":  "dataset-name-1", ... },
         {"dataset":  "dataset-name-2", ... },
         ...
-    ]
+    ],
+    "datahubAuthConfig": {
+        "authUrl": "<AuthUrl>",
+        "audience": "<Audience>"
+
+    }
 }
 ```
 
@@ -147,6 +152,9 @@ property name | description
 -- | --
 `id` | specify the name of the layer service
 `storageBackends` | a list of 0 or more dataset configurations
+`datahubAuthConfig.authUrl` | Auth URL for datahub if deliverOnceConfig.enabled: true
+`datahubAuthConfig.audience` | Audience for datahub if deliverOnceConfig.enabled: true
+
 
 #### dataset configuration
 
@@ -240,16 +248,12 @@ Depending on storage type and security requirements the configuration of each da
         }
     },
     "orderBy": [[0,8],[8,12],[12,14]],
-    "DeliverOnceConfig": {
-        "AuthUrl": "<url>",
-        "Audience": "<audience>",
-        "ClientId":"<clientid>",
-        "Enabled": true,
-        "Dataset": "foo",
-        "IdNamespace": "http://my.id.namespace/",
-        "DefaultNamespace": "http://my.default.namespace/",
-        "BaseUrl": "<baseurl>",
-        "ClientSecret":"<secret>"
+    "deliverOnceConfig": {
+        "enabled": true,
+        "dataset": "foo",
+        "idNamespace": "http://my.id.namespace/",
+        "defaultNamespace": "http://my.default.namespace/",
+        "baseUrl": "<baseurl>"
     },
 }
 ```
@@ -304,14 +308,10 @@ property name | description
 `flatFile.continueOnParseError` | If set to true, the line parser will log a warning and continue to parse the rest of the file on error. Default: false
 `flatFile.customFileName` | sets a custom string after the recorded timestamp in the file name i.e 1723634100068669184-<XXX>.txt when writing to s3.
 `flatfile.rawRecord` | If set to true, the raw record will be added to the entity as a property called `data`. Default: false
-`DeliverOnceConfig.Enabled` | If set to true, the Deliver Once feature will be activated. Only supported for S3.
-`DeliverOnceConfig.AuthUrl` | The URL for authenticating with ClientId and ClientSecret.
-`DeliverOnceConfig.Audience` | The base URL for the datahub the Deliver Once pattern will send data back to.
-`DeliverOnceConfig.ClientId` | ClientId for auth.
-`DeliverOnceConfig.Dataset` | The dataset in the datahub data should be sent to.
-`DeliverOnceConfig.IdNamespace` | The namespace for each entity's id.
-`DeliverOnceConfig.DefaultNamespace` | The namespace for properties in the entities.
-`DeliverOnceConfig.ClientSecret` | ClientSecret for auth. The value should represent the secrets name in environmental variables.
+`deliverOnceConfig.enabled` | If set to true, the Deliver Once feature will be activated. Only supported for S3.
+`deliverOnceConfig.dataset` | The dataset in the datahub data should be sent to.
+`deliverOnceConfig.idNamespace` | The namespace for each entity's id.
+`deliverOnceConfig.defaultNamespace` | The namespace for properties in the entities.
 
 #### Encoders.
 
@@ -652,3 +652,5 @@ There will therefore be a max size on the parquet file.
 ### Deliver Once feature
 
 The Deliver Once feature is allows you to store data tha has been successfully sent to storage back to the datahub. This allows you to lookup every successfully sent entity before sending data to the datalayer to ensure data is delivered only once. This is especially useful in non-idempotent scenarios where you cannot send data that has already been sent again. This feature is only supported for S3 storage backends.
+
+If Deliver Once feature is enabled, you also need to specify ```DELIVER_ONCE_CLIENT_ID``` and ```DELIVER_ONCE_CLIENT_SECRET``` in env vars to be injected into ```datahubAuthConfig```.
