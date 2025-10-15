@@ -118,7 +118,7 @@ func (conf *ConfigurationManager) load() {
 func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageConfig {
 	updatedStorageBackend := []StorageBackend{}
 	for _, mapping := range config.StorageBackends {
-		clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRETT")
+		clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRET")
 		if clientSecretFromEnv != "" {
 			config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
 		} else {
