@@ -1,9 +1,10 @@
 package conf
 
 type StorageConfig struct {
-	Id              string                    `json:"id"`
-	StorageBackends []StorageBackend          `json:"storageBackends"`
-	StorageMapping  map[string]StorageBackend `json:"-"` //ignore field  when marshaling/unmarshaling
+	Id                string                    `json:"id"`
+	DatahubAuthConfig DatahubAuthConfig         `json:"datahubAuthConfig"`
+	StorageBackends   []StorageBackend          `json:"storageBackends"`
+	StorageMapping    map[string]StorageBackend `json:"-"` //ignore field  when marshaling/unmarshaling
 }
 
 type StorageBackend struct {
@@ -45,14 +46,10 @@ type LocalFileConfig struct {
 }
 
 type DeliverOnceConfig struct {
-	AuthUrl          string  `json:"authUrl"`
-	Audience         string  `json:"audience"`
-	ClientId         string  `json:"clientId"`
-	Enabled          bool    `json:"enabled"`
-	Dataset          string  `json:"dataset"`
-	IdNamespace      string  `json:"idNamespace"`
-	DefaultNamespace string  `json:"defaultNamespace"`
-	ClientSecret     *string `json:"clientSecret,omitempty"`
+	Enabled          bool   `json:"enabled"`
+	Dataset          string `json:"dataset"`
+	IdNamespace      string `json:"idNamespace"`
+	DefaultNamespace string `json:"defaultNamespace"`
 }
 
 type PropertiesMapping struct {
@@ -98,4 +95,11 @@ type FlatFileField struct {
 	Type       string  `json:"type"`
 	Decimals   int     `json:"decimals"`
 	DateLayout string  `json:"dateLayout"`
+}
+
+type DatahubAuthConfig struct {
+	DeliverOnceClientId     *string `json:"deliverOnceClientId,omitempty"`
+	DeliverOnceClientSecret *string `json:"deliverOnceClientSecret,omitempty"`
+	Audience                string  `json:"audience,omitempty"`
+	AuthUrl                 string  `json:"authUrl,omitempty"`
 }

@@ -31,19 +31,20 @@ import (
 )
 
 type S3Storage struct {
-	logger         *zap.SugaredLogger
-	env            *conf.Env
-	config         conf.StorageBackend
-	dataset        string
-	statsd         statsd.ClientInterface
-	uploader       *s3manager.Uploader
-	downloader     *s3manager.Downloader
-	writer         encoder.EncodingEntityWriter
-	reader         *io.PipeReader
-	fullsyncId     string
-	waitGroup      sync.WaitGroup
-	cancelFunc     context.CancelFunc
-	fullsyncTimout *time.Timer
+	logger            *zap.SugaredLogger
+	env               *conf.Env
+	config            conf.StorageBackend
+	datahubAuthConfig conf.DatahubAuthConfig
+	dataset           string
+	statsd            statsd.ClientInterface
+	uploader          *s3manager.Uploader
+	downloader        *s3manager.Downloader
+	writer            encoder.EncodingEntityWriter
+	reader            *io.PipeReader
+	fullsyncId        string
+	waitGroup         sync.WaitGroup
+	cancelFunc        context.CancelFunc
+	fullsyncTimout    *time.Timer
 }
 type sequentialWriter struct {
 	w io.Writer
@@ -183,7 +184,7 @@ func (s3s *S3Storage) ExportSchema() error {
 	return nil
 }
 
-func NewS3Storage(logger *zap.SugaredLogger, env *conf.Env, config conf.StorageBackend, statsd statsd.ClientInterface, dataset string) (*S3Storage, error) {
+func NewS3Storage(logger *zap.SugaredLogger, env *conf.Env, config conf.StorageBackend, statsd statsd.ClientInterface, dataset string, datahubAuthConfig conf.DatahubAuthConfig) (*S3Storage, error) {
 	uploader, downloader, err := initS3(config, env)
 	downloader.Concurrency = 1 // disable parallel download of chunks, we need sequential streaming
 	if err != nil {
@@ -191,13 +192,14 @@ func NewS3Storage(logger *zap.SugaredLogger, env *conf.Env, config conf.StorageB
 	}
 
 	s := &S3Storage{
-		logger:     logger.Named("s3-store").With("dataset", dataset),
-		env:        env,
-		config:     config,
-		dataset:    dataset,
-		statsd:     statsd,
-		uploader:   uploader,
-		downloader: downloader,
+		logger:            logger.Named("s3-store").With("dataset", dataset),
+		env:               env,
+		datahubAuthConfig: datahubAuthConfig,
+		config:            config,
+		dataset:           dataset,
+		statsd:            statsd,
+		uploader:          uploader,
+		downloader:        downloader,
 	}
 
 	err = s.ExportSchema()
@@ -601,13 +603,13 @@ func (s3s *S3Storage) DeliverOnce(entities []*uda.Entity, client datahub.Client)
 
 }
 func (s3s *S3Storage) DeliverOnceClientInit() (datahub.Client, error) {
-	client, err := datahub.NewClient(s3s.config.DeliverOnceConfig.Audience)
+	client, err := datahub.NewClient(s3s.datahubAuthConfig.Audience)
 	if err != nil {
 		s3s.logger.Error("Failed to create client: ", err)
 		return datahub.Client{}, err
 	}
 	if s3s.env.Env != "local" {
-		client.WithClientKeyAndSecretAuth(s3s.config.DeliverOnceConfig.AuthUrl, s3s.config.DeliverOnceConfig.Audience, s3s.config.DeliverOnceConfig.ClientId, *s3s.config.DeliverOnceConfig.ClientSecret)
+		client.WithClientKeyAndSecretAuth(s3s.datahubAuthConfig.AuthUrl, s3s.datahubAuthConfig.Audience, *s3s.datahubAuthConfig.DeliverOnceClientId, *s3s.datahubAuthConfig.DeliverOnceClientSecret)
 		err = client.Authenticate()
 		if err != nil {
 			s3s.logger.Error("Failed to authenticate: ", err)
@@ -624,15 +626,15 @@ func (s3s *S3Storage) DeliverOnceClientInit() (datahub.Client, error) {
 
 func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 	if s3s.env.Env != "local" {
-		if s3s.config.DeliverOnceConfig.AuthUrl == "" {
+		if s3s.datahubAuthConfig.AuthUrl == "" {
 			s3s.logger.Error("DeliverOnce AuthUrl is not set\n")
 			return errors.New("DeliverOnce AuthUrl is not set")
 		}
-		if s3s.config.DeliverOnceConfig.ClientId == "" {
+		if *s3s.datahubAuthConfig.DeliverOnceClientId == "" {
 			s3s.logger.Error("DeliverOnce ClientId is not set\n")
 			return errors.New("DeliverOnce ClientId is not set")
 		}
-		if *s3s.config.DeliverOnceConfig.ClientSecret == "" {
+		if *s3s.datahubAuthConfig.DeliverOnceClientSecret == "" {
 			s3s.logger.Error("DeliverOnce ClientSecret is not set\n")
 			return errors.New("DeliverOnce ClientSecret is not set")
 		}
@@ -641,7 +643,7 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 		s3s.logger.Error("DeliverOnce Dataset is not set\n")
 		return errors.New("DeliverOnce Dataset is not set")
 	}
-	if s3s.config.DeliverOnceConfig.Audience == "" {
+	if s3s.datahubAuthConfig.Audience == "" {
 		s3s.logger.Error("DeliverOnce Audience is not set\n")
 		return errors.New("DeliverOnce Audience is not set")
 	}
@@ -658,7 +660,7 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 func (s3s *S3Storage) EnsureDeliverOnceDatasetExist(client datahub.Client) error {
 	_, err := client.GetDataset(s3s.config.DeliverOnceConfig.Dataset)
 	if err != nil {
-		s3s.logger.Info("Deliver Once dataset does not exist. Creating it")
+		s3s.logger.Info("Deliver Once dataset does not exist. You need to create it manually.")
 		return err
 	}
 	return nil

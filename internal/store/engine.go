@@ -2,11 +2,12 @@ package store
 
 import (
 	"errors"
+	"strings"
+	"sync"
+
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
 	"go.uber.org/zap"
-	"strings"
-	"sync"
 )
 
 type StorageEngine struct {
@@ -45,7 +46,7 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 	engine.lock.Lock()
 	defer engine.lock.Unlock()
 	if s, ok := engine.storages[datasetName]; ok {
-		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
+		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName], engine.mngr.Datalayer.DatahubAuthConfig)
 		engine.logger.Debug(storage)
 		if err != nil {
 			return nil, err
@@ -54,7 +55,7 @@ func (engine *StorageEngine) Storage(datasetName string) (StorageInterface, erro
 		state = s
 
 	} else {
-		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName])
+		storage, err := engine.initBackend(engine.mngr.Datalayer.StorageMapping[datasetName], engine.mngr.Datalayer.DatahubAuthConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -77,12 +78,12 @@ func (engine *StorageEngine) Close(datasetName string) {
 	}
 }
 
-func (engine *StorageEngine) initBackend(backend conf.StorageBackend) (StorageInterface, error) {
+func (engine *StorageEngine) initBackend(backend conf.StorageBackend, datahubAuthConfig conf.DatahubAuthConfig) (StorageInterface, error) {
 	switch strings.ToLower(backend.StorageType) {
 	case "azure":
 		return NewAzureStorage(engine.logger, engine.env, backend, engine.statsd, backend.Dataset), nil
 	case "s3":
-		return NewS3Storage(engine.logger, engine.env, backend, engine.statsd, backend.Dataset)
+		return NewS3Storage(engine.logger, engine.env, backend, engine.statsd, backend.Dataset, datahubAuthConfig)
 	case "localstorage":
 		return NewLocalStorage(engine.logger, engine.env, engine.statsd, backend, backend.Dataset), nil
 	default:
