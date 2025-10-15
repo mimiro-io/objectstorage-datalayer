@@ -113,7 +113,6 @@ func (conf *ConfigurationManager) load() {
 		conf.State = state
 		conf.logger.Info("Updated configuration with new values")
 	}
-
 }
 
 func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageConfig {
@@ -122,10 +121,14 @@ func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageC
 		clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRET")
 		if clientSecretFromEnv != "" {
 			config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
+		} else {
+			conf.logger.Error("DeliverOnce ClientSecret is not set\n")
 		}
 		clientIdFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_ID")
 		if clientIdFromEnv != "" {
 			config.DatahubAuthConfig.DeliverOnceClientId = &clientIdFromEnv
+		} else {
+			conf.logger.Error("DeliverOnce ClientId is not set\n")
 		}
 		secretFromProperties := mapping.Properties.Secret
 		if secretFromProperties != nil && *secretFromProperties != "" {
