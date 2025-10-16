@@ -215,7 +215,6 @@ func (conf *ConfigurationManager) mapColumns(config *StorageConfig) *StorageConf
 	for _, t := range config.StorageBackends {
 		layers[t.Dataset] = t
 	}
-
 	config.StorageMapping = layers
 	return config
 }
