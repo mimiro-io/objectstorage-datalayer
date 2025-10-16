@@ -117,15 +117,15 @@ func (conf *ConfigurationManager) load() {
 
 func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageConfig {
 	updatedStorageBackend := []StorageBackend{}
+	clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRET")
+	if clientSecretFromEnv != "" {
+		config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
+	}
+	clientIdFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_ID")
+	if clientIdFromEnv != "" {
+		config.DatahubAuthConfig.DeliverOnceClientId = &clientIdFromEnv
+	}
 	for _, mapping := range config.StorageBackends {
-		clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRET")
-		if clientSecretFromEnv != "" {
-			config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
-		}
-		clientIdFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_ID")
-		if clientIdFromEnv != "" {
-			config.DatahubAuthConfig.DeliverOnceClientId = &clientIdFromEnv
-		}
 		secretFromProperties := mapping.Properties.Secret
 		if secretFromProperties != nil && *secretFromProperties != "" {
 			secretFromEnvironment := viper.GetString(*secretFromProperties)
