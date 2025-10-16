@@ -630,11 +630,11 @@ func (s3s *S3Storage) DeliverOnceVariableCheck() error {
 			s3s.logger.Error("DeliverOnce AuthUrl is not set\n")
 			return errors.New("DeliverOnce AuthUrl is not set")
 		}
-		if *s3s.datahubAuthConfig.DeliverOnceClientId == "" {
+		if s3s.datahubAuthConfig.DeliverOnceClientId == nil || *s3s.datahubAuthConfig.DeliverOnceClientId == "" {
 			s3s.logger.Error("DeliverOnce ClientId is not set\n")
 			return errors.New("DeliverOnce ClientId is not set")
 		}
-		if *s3s.datahubAuthConfig.DeliverOnceClientSecret == "" {
+		if s3s.datahubAuthConfig.DeliverOnceClientSecret == nil || *s3s.datahubAuthConfig.DeliverOnceClientSecret == "" {
 			s3s.logger.Error("DeliverOnce ClientSecret is not set\n")
 			return errors.New("DeliverOnce ClientSecret is not set")
 		}
