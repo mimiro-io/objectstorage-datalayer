@@ -119,18 +119,12 @@ func (conf *ConfigurationManager) injectSecrets(config *StorageConfig) *StorageC
 	updatedStorageBackend := []StorageBackend{}
 	for _, mapping := range config.StorageBackends {
 		clientSecretFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_SECRET")
-		if config.StorageBackends[0].DeliverOnceConfig.Enabled {
-			if clientSecretFromEnv != "" {
-				config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
-			} else {
-				conf.logger.Error("DeliverOnce ClientSecret is not set\n")
-			}
-			clientIdFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_ID")
-			if clientIdFromEnv != "" {
-				config.DatahubAuthConfig.DeliverOnceClientId = &clientIdFromEnv
-			} else {
-				conf.logger.Error("DeliverOnce ClientId is not set\n")
-			}
+		if clientSecretFromEnv != "" {
+			config.DatahubAuthConfig.DeliverOnceClientSecret = &clientSecretFromEnv
+		}
+		clientIdFromEnv := viper.GetString("DELIVER_ONCE_CLIENT_ID")
+		if clientIdFromEnv != "" {
+			config.DatahubAuthConfig.DeliverOnceClientId = &clientIdFromEnv
 		}
 		secretFromProperties := mapping.Properties.Secret
 		if secretFromProperties != nil && *secretFromProperties != "" {
@@ -221,6 +215,7 @@ func (conf *ConfigurationManager) mapColumns(config *StorageConfig) *StorageConf
 	for _, t := range config.StorageBackends {
 		layers[t.Dataset] = t
 	}
+
 	config.StorageMapping = layers
 	return config
 }
