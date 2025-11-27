@@ -2,13 +2,14 @@ package encoder_test
 
 import (
 	"bytes"
+	"io/ioutil"
+	"testing"
+	"time"
+
 	"github.com/franela/goblin"
 	goparquet "github.com/fraugster/parquet-go"
 	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"github.com/mimiro-io/objectstorage-datalayer/internal/conf"
-	"io/ioutil"
-	"testing"
-	"time"
 )
 
 func TestParquet(t *testing.T) {
@@ -356,7 +357,7 @@ func TestParquet(t *testing.T) {
 				Namespaces: map[string]string{"ns10": "http://data.example.io/"}}
 			result, err := encodeOnce(backend, entities, &entityContext)
 			g.Assert(err).IsNil()
-			g.Assert(len(result)).Eql(473)
+			g.Assert(len(result)).Eql(453)
 			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "recorded")
 			g.Assert(err).IsNil()
 			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
@@ -365,12 +366,52 @@ func TestParquet(t *testing.T) {
 			row, _ := pqReader.NextRow()
 			g.Assert(row["id"]).Eql([]byte("ns10:1"))
 			g.Assert(row["key"]).Eql([]byte("value 1"))
-			g.Assert(row["recorded"]).Eql([]byte("1666349374523225600"))
+			rec1 := row["recorded"].([]byte)
 
 			row, _ = pqReader.NextRow()
 			g.Assert(row["id"]).Eql([]byte("ns10:2"))
 			g.Assert(row["key"]).Eql([]byte("value 2"))
-			g.Assert(row["recorded"]).Eql([]byte("1660804179145791488"))
+			rec2 := row["recorded"].([]byte)
+			//different ids in the batch should yield *same* recorded timestamp
+			g.Assert(rec1).Eql(rec2)
+		})
+		g.It("Should produce recorded with different timestamp", func() {
+			backend := conf.StorageBackend{ParquetConfig: &conf.ParquetConfig{
+				SchemaDefinition: `message test_schema {
+					required binary id (STRING);
+					required binary key (STRING);
+					required binary recorded (STRING);
+				}`,
+			}}
+			entities := []*uda.Entity{
+				{ID: "ns10:1",
+					Properties: map[string]interface{}{"a:key": "value 1"},
+				},
+				{ID: "ns10:1",
+					Properties: map[string]interface{}{"a:key": "value 2"},
+				},
+			}
+			entityContext := uda.Context{ID: "@context",
+				Namespaces: map[string]string{"ns10": "http://data.example.io/"}}
+			result, err := encodeOnce(backend, entities, &entityContext)
+			g.Assert(err).IsNil()
+			//g.Assert(len(result)).Eql(449)
+			pqReader, err := goparquet.NewFileReader(bytes.NewReader(result), "id", "key", "recorded")
+			g.Assert(err).IsNil()
+			//t.Logf("Schema: %s", pqReader.GetSchemaDefinition())
+
+			g.Assert(pqReader.NumRows()).Eql(int64(2))
+			row, _ := pqReader.NextRow()
+			g.Assert(row["id"]).Eql([]byte("ns10:1"))
+			g.Assert(row["key"]).Eql([]byte("value 1"))
+			rec1 := row["recorded"].([]byte)
+
+			row, _ = pqReader.NextRow()
+			g.Assert(row["id"]).Eql([]byte("ns10:1"))
+			g.Assert(row["key"]).Eql([]byte("value 2"))
+			rec2 := row["recorded"].([]byte)
+			//same ids in the batch should yield *different* recorded timestamp
+			g.Assert(string(rec1) != string(rec2)).IsTrue()
 		})
 	})
 	g.Describe("The Parquet Decoder", func() {

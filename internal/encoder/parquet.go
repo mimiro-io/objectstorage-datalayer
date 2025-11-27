@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/mimiro-io/internal-go-util/pkg/uda"
 	"io"
 	"strings"
 	"time"
+
+	"github.com/mimiro-io/internal-go-util/pkg/uda"
 
 	goparquet "github.com/fraugster/parquet-go"
 	"github.com/fraugster/parquet-go/parquet"
@@ -55,11 +56,24 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 			return 0, err
 		}
 	}
+	seenIds := make(map[string]string, len(entities))
+	now := fmt.Sprintf("%d", time.Now().UTC().UnixNano())
 
 	for _, e := range entities {
 		props := uda.StripProps(e)
 		refs := uda.StripRefs(e)
 		row := make(map[string]interface{})
+
+		recordId := e.ID
+		if recordId != "" {
+			if _, exists := seenIds[recordId]; exists {
+				// duplicate id in same batch. Ensure different timestamp
+				time.Sleep(1 * time.Millisecond)
+				now = fmt.Sprintf("%d", time.Now().UTC().UnixNano())
+			}
+			seenIds[recordId] = recordId
+		}
+
 		for _, c := range enc.schemaDef.RootColumn.Children {
 			if c.SchemaElement.Name == "deleted" {
 				i, err := convertType(e.IsDeleted, c.SchemaElement.Type, c.SchemaElement.LogicalType)
@@ -70,7 +84,7 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 			}
 
 			if c.SchemaElement.Name == "recorded" {
-				i, err := convertType(e.Recorded, c.SchemaElement.Type, c.SchemaElement.LogicalType)
+				i, err := convertType(now, c.SchemaElement.Type, c.SchemaElement.LogicalType)
 				if err != nil {
 					return 0, err
 				}
