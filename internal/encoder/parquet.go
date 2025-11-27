@@ -67,8 +67,8 @@ func (enc *ParquetEncoder) Write(entities []*uda.Entity) (int, error) {
 		recordId := e.ID
 		if recordId != "" {
 			if _, exists := seenIds[recordId]; exists {
-				// duplicate id in same batch
-				time.Sleep(100 * time.Millisecond)
+				// duplicate id in same batch. Ensure different timestamp
+				time.Sleep(1 * time.Millisecond)
 				now = fmt.Sprintf("%d", time.Now().UTC().UnixNano())
 			}
 			seenIds[recordId] = recordId
