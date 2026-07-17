@@ -49,7 +49,10 @@ func TestS3(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		var testConf *os.File
 		g.Before(func() {
-			l, _ = localstack.NewInstance()
+			// Pin a free community version. localstack/localstack:latest now requires a
+			// Pro license and exits on startup (exit 55), which left the endpoint pointing
+			// at a dead container and caused connection-refused failures.
+			l, _ = localstack.NewInstance(localstack.WithVersion("3.8.1"))
 			pool, _ := dockertest.NewPool("")
 			containers, _ := pool.Client.ListContainers(docker.ListContainersOptions{All: false})
 			endpoint = ""
@@ -71,6 +74,10 @@ func TestS3(t *testing.T) {
 				l.Start()
 				endpoint = l.Endpoint(localstack.S3)
 			}
+			// go-localstack reports the endpoint as "localhost:<port>", which resolves to
+			// IPv6 ::1 on some hosts (e.g. macOS) where the container port is IPv4-only.
+			// Force IPv4 so both the app config and the verification client can connect.
+			endpoint = strings.Replace(endpoint, "localhost", "127.0.0.1", 1)
 			awsSession, _ = session.NewSession(&aws.Config{
 				Credentials:      credentials.NewStaticCredentials("not", "empty", ""),
 				DisableSSL:       aws.Bool(true),
