@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -56,8 +57,8 @@ func TestOrderContent(t *testing.T) {
 	}
 	orderBy := [][]int{
 		{0, 8},
-		{8, 12},
-		{12, 14}}
+		{8, 10},
+		{10, 14}}
 	config := conf.StorageBackend{
 		OrderBy: orderBy,
 	}
@@ -79,8 +80,8 @@ func TestOrderContentNoIntError(t *testing.T) {
 	data := []byte("1000wer000100002\n10000000200001\n10000000200002\n20000000100002\n20000000100001\n20000000200001\n20000000200002\n10000000100001\n")
 	orderBy := [][]int{
 		{0, 8},
-		{8, 12},
-		{12, 14}}
+		{8, 10},
+		{10, 14}}
 	config := conf.StorageBackend{
 		OrderBy: orderBy,
 	}
@@ -89,6 +90,86 @@ func TestOrderContentNoIntError(t *testing.T) {
 		t.Error("Expected error, got none")
 	}
 }
+func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
+	configJSON := `{
+		"orderBy": [[0,8]],
+		"flatFile": {
+			"fieldOrder": ["Gardsid", "Periodenr"],
+			"fields": {
+				"Gardsid": {"substring": [[0, 8]]},
+				"Periodenr": {"substring": [[8, 10]]}
+			}
+		}
+	}`
+	var backend conf.StorageBackend
+	if err := json.Unmarshal([]byte(configJSON), &backend); err != nil {
+		t.Fatal(err)
+	}
+
+	entities := []*uda.Entity{
+		{ID: "a:1", Properties: map[string]interface{}{"a:Gardsid": "22222222", "a:Periodenr": "02"}},
+		{ID: "a:2", Properties: map[string]interface{}{"a:Periodenr": "01"}}, // missing Gardsid -> bad row
+		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "11111111", "a:Periodenr": "03"}},
+	}
+
+	content, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("expected no error, batch should continue despite bad row: %v", err)
+	}
+
+	got := string(content)
+	if strings.Contains(got, "  ") {
+		t.Errorf("expected bad row to be dropped, got content containing blank Gardsid: %q", got)
+	}
+	if !strings.Contains(got, "1111111103") || !strings.Contains(got, "2222222202") {
+		t.Errorf("expected the two valid rows to be present and ordered, got: %q", got)
+	}
+	// valid rows should be sorted ascending by Gardsid: 11111111 before 22222222
+	if strings.Index(got, "11111111") > strings.Index(got, "22222222") {
+		t.Errorf("expected rows to be ordered ascending by Gardsid, got: %q", got)
+	}
+}
+
+func TestGenerateAndOrderFlatFileContent_DropsPanickingRowKeepsRest(t *testing.T) {
+	// A field typed as "integer" expects a float64 property value (as real json.Unmarshal
+	// numbers would produce). Supplying a string here triggers a failed type assertion
+	// panic deep in the flat file encoder. This must be recovered and the row dropped,
+	// not allowed to crash/fail the whole batch.
+	configJSON := `{
+		"orderBy": [[0,8]],
+		"flatFile": {
+			"fieldOrder": ["Gardsid", "SomeInt"],
+			"fields": {
+				"Gardsid": {"substring": [[0, 8]]},
+				"SomeInt": {"substring": [[8, 10]], "type": "integer"}
+			}
+		}
+	}`
+	var backend conf.StorageBackend
+	if err := json.Unmarshal([]byte(configJSON), &backend); err != nil {
+		t.Fatal(err)
+	}
+
+	entities := []*uda.Entity{
+		{ID: "a:1", Properties: map[string]interface{}{"a:Gardsid": "11111111", "a:SomeInt": float64(2)}},
+		{ID: "a:2", Properties: map[string]interface{}{"a:Gardsid": "22222222", "a:SomeInt": "not-a-number"}}, // wrong type -> panics
+		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "33333333", "a:SomeInt": float64(3)}},
+	}
+
+	content, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("expected no error, batch should continue despite panicking row: %v", err)
+	}
+
+	got := string(content)
+	if strings.Contains(got, "22222222") {
+		t.Errorf("expected panicking row to be dropped, but it appeared in content: %q", got)
+	}
+	if !strings.Contains(got, "11111111") || !strings.Contains(got, "33333333") {
+		t.Errorf("expected good rows to be present, got: %q", got)
+	}
+}
+
 func TestDeliverOnceVariableCheckMissingVariable(t *testing.T) {
 	var env string = "local"
 	storage := S3Storage{

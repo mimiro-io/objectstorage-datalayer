@@ -243,14 +243,21 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	if len(entities) == 0 {
 		return nil
 	}
-	content, err := GenerateContent(entities, s3s.config, s3s.logger)
-	if err != nil {
-		s3s.logger.Error("Unable to create store content")
-	}
-	if len(s3s.config.OrderBy) > 0 {
-		content, err = OrderContent(content, s3s.config, s3s.logger)
+	var content []byte
+	var err error
+	if s3s.config.FlatFileConfig != nil && len(s3s.config.OrderBy) > 0 {
+		// encode and order entity by entity, so a single entity with unparseable
+		// orderBy data is logged and dropped instead of failing the whole batch
+		content, err = GenerateAndOrderFlatFileContent(entities, s3s.config, s3s.logger)
 		if err != nil {
-			s3s.logger.Error("Unable to order content")
+			s3s.logger.Error("Unable to generate ordered store content")
+			return err
+		}
+	} else {
+		content, err = GenerateContent(entities, s3s.config, s3s.logger)
+		if err != nil {
+			s3s.logger.Error("Unable to create store content")
+			return err
 		}
 	}
 

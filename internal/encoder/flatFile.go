@@ -45,6 +45,14 @@ func (enc *FlatFileEncoder) CloseWithError(err error) error {
 	return enc.writer.CloseWithError(err)
 }
 
+// EncodeFlatFileEntities encodes a set of entities into flat file lines without
+// requiring a pipe/writer. This allows callers to encode entities one at a time
+// (e.g. to associate a resulting line back to the entity that produced it).
+func EncodeFlatFileEntities(entities []*uda.Entity, backend conf.StorageBackend) ([]byte, error) {
+	enc := &FlatFileEncoder{backend: backend}
+	return enc.encode(entities)
+}
+
 func (enc *FlatFileEncoder) encode(entities []*uda.Entity) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	fields := enc.backend.FlatFileConfig.Fields
