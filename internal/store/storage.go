@@ -94,6 +94,94 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 	}
 	return sortedData, nil
 }
+
+// GenerateAndOrderFlatFileContent encodes and orders flat file content one entity at a
+// time, so that a single entity with data that cannot be parsed for ordering (e.g. a
+// missing or malformed value in one of the OrderBy fixed-width ranges) is logged and
+// dropped, without causing the whole batch to fail.
+func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
+	type keyedLine struct {
+		line []byte
+		keys []int
+	}
+
+	acceptedSortingTypes := []string{"desc", "asc"}
+	if !slices.Contains(acceptedSortingTypes, config.OrderType) {
+		logger.Info("No valid orderType defined. Defaulting to ascending order")
+	}
+
+	var kept []keyedLine
+	for _, e := range entities {
+		lineBytes, ok := safeEncodeFlatFileEntity(e, config, logger)
+		if !ok {
+			continue
+		}
+		if len(lineBytes) == 0 {
+			// entity produced no output line (e.g. no fields matched); nothing to order
+			continue
+		}
+		trimmed := strings.TrimSuffix(string(lineBytes), "\n")
+
+		keys := make([]int, len(config.OrderBy))
+		badRow := false
+		for i, rng := range config.OrderBy {
+			v, err := extractParts(trimmed, rng)
+			if err != nil {
+				logger.Errorw("Unable to parse orderBy value for entity. Dropping row.",
+					"id", e.ID, "position", rng, "error", err)
+				badRow = true
+				break
+			}
+			keys[i] = v
+		}
+		if badRow {
+			continue
+		}
+		kept = append(kept, keyedLine{line: []byte(trimmed), keys: keys})
+	}
+
+	sort.Slice(kept, func(i, j int) bool {
+		for idx := range kept[i].keys {
+			a, b := kept[i].keys[idx], kept[j].keys[idx]
+			if a != b {
+				if config.OrderType == "desc" {
+					return a > b
+				}
+				return a < b
+			}
+		}
+		return false
+	})
+
+	var out []byte
+	for _, k := range kept {
+		out = append(out, k.line...)
+		out = append(out, '\n')
+	}
+	return out, nil
+}
+
+// safeEncodeFlatFileEntity encodes a single entity to a flat file line, recovering from
+// any panic raised during encoding (e.g. a field value of an unexpected type causing a
+// failed type assertion). Returns ok=false if the entity could not be encoded for any
+// reason, so the caller can log and drop just that row instead of failing the batch.
+func safeEncodeFlatFileEntity(e *uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) (line []byte, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorw("Panic while encoding entity for flat file. Dropping row.", "id", e.ID, "error", r)
+			line = nil
+			ok = false
+		}
+	}()
+
+	lineBytes, err := encoder.EncodeFlatFileEntities([]*uda.Entity{e}, config)
+	if err != nil {
+		logger.Errorw("Failed to encode entity for flat file. Dropping row.", "id", e.ID, "error", err)
+		return nil, false
+	}
+	return lineBytes, true
+}
+
 func extractParts(s string, i []int) (int, error) {
 	numPart, err := strconv.Atoi(s[i[0]:i[1]])
 	if err != nil {
