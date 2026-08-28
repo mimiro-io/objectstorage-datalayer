@@ -239,25 +239,26 @@ func (s3s *S3Storage) GetConfig() conf.StorageBackend {
 	return s3s.config
 }
 
-func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
+func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error) {
 	if len(entities) == 0 {
-		return nil
+		return nil, nil
 	}
 	var content []byte
 	var err error
+	storedEntities := entities
 	if s3s.config.FlatFileConfig != nil && len(s3s.config.OrderBy) > 0 {
 		// encode and order entity by entity, so a single entity with unparseable
 		// orderBy data is logged and dropped instead of failing the whole batch
-		content, err = GenerateAndOrderFlatFileContent(entities, s3s.config, s3s.logger)
+		content, storedEntities, err = GenerateAndOrderFlatFileContent(entities, s3s.config, s3s.logger)
 		if err != nil {
 			s3s.logger.Error("Unable to generate ordered store content")
-			return err
+			return nil, err
 		}
 	} else {
 		content, err = GenerateContent(entities, s3s.config, s3s.logger)
 		if err != nil {
 			s3s.logger.Error("Unable to create store content")
-			return err
+			return nil, err
 		}
 	}
 
@@ -285,10 +286,10 @@ func (s3s *S3Storage) StoreEntities(entities []*uda.Entity) error {
 	result, err := s3s.uploader.Upload(uploadInput)
 	if err != nil {
 		s3s.logger.Error("Failed to upload ", err)
-		return err
+		return nil, err
 	}
 	s3s.logger.Info("Successfully uploaded to ", result.Location)
-	return nil
+	return storedEntities, nil
 }
 
 func (s3s *S3Storage) createKey(entities []*uda.Entity, fullSync bool) string {

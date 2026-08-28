@@ -63,7 +63,7 @@ func (azStorage *AzureStorage) GetConfig() conf.StorageBackend {
 	return azStorage.config
 }
 
-func (azStorage *AzureStorage) StoreEntities(entities []*uda.Entity) error {
+func (azStorage *AzureStorage) StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error) {
 	azStorage.logger.Debugf("Got: %d entities", len(entities))
 	tags := []string{
 		"datalayer",
@@ -85,18 +85,21 @@ func (azStorage *AzureStorage) StoreEntities(entities []*uda.Entity) error {
 	credential, err := azStorage.azureBlobCredentials()
 	if err != nil {
 		azStorage.logger.Errorf("Invalid credentials with error: " + err.Error())
-		return err
+		return nil, err
 	}
 
 	content, err := GenerateContent(entities, azStorage.config, azStorage.logger)
 	if err != nil {
 		azStorage.logger.Errorf("Unable to create stores content")
-		return err
+		return nil, err
 	}
 
 	err = azStorage.upload(content, azUrl, credential)
+	if err != nil {
+		return nil, err
+	}
 
-	return err
+	return entities, nil
 }
 
 func (azStorage *AzureStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {

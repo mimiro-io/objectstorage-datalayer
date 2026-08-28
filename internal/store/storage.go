@@ -27,7 +27,11 @@ type StorageInterface interface {
 	DeliverOnceClientInit() (datahub.Client, error)
 	DeliverOnceVariableCheck() error
 	DeliverOnce(entities []*uda.Entity, client datahub.Client) error
-	StoreEntities(entities []*uda.Entity) error
+	// StoreEntities writes entities to the backend and returns the subset of entities
+	// that were actually stored (some backends may drop individual invalid rows rather
+	// than failing the whole batch). Callers that trigger DeliverOnce should use the
+	// returned entities, not the input, so dropped rows aren't reported as delivered.
+	StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error)
 	StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error
 	GetEntities() (io.Reader, error)
 	GetChanges(since string) (io.Reader, error)
@@ -98,11 +102,14 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 // GenerateAndOrderFlatFileContent encodes and orders flat file content one entity at a
 // time, so that a single entity with data that cannot be parsed for ordering (e.g. a
 // missing or malformed value in one of the OrderBy fixed-width ranges) is logged and
-// dropped, without causing the whole batch to fail.
-func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, error) {
+// dropped, without causing the whole batch to fail. It returns the generated content
+// along with the subset of entities that were actually kept and written, so callers can
+// avoid treating dropped entities as if they were successfully stored.
+func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, []*uda.Entity, error) {
 	type keyedLine struct {
-		line []byte
-		keys []int
+		line   []byte
+		keys   []int
+		entity *uda.Entity
 	}
 
 	acceptedSortingTypes := []string{"desc", "asc"}
@@ -137,7 +144,7 @@ func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.Storage
 		if badRow {
 			continue
 		}
-		kept = append(kept, keyedLine{line: []byte(trimmed), keys: keys})
+		kept = append(kept, keyedLine{line: []byte(trimmed), keys: keys, entity: e})
 	}
 
 	sort.Slice(kept, func(i, j int) bool {
@@ -154,11 +161,13 @@ func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.Storage
 	})
 
 	var out []byte
+	storedEntities := make([]*uda.Entity, 0, len(kept))
 	for _, k := range kept {
 		out = append(out, k.line...)
 		out = append(out, '\n')
+		storedEntities = append(storedEntities, k.entity)
 	}
-	return out, nil
+	return out, storedEntities, nil
 }
 
 // safeEncodeFlatFileEntity encodes a single entity to a flat file line, recovering from

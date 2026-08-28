@@ -41,7 +41,7 @@ func TestConsoleStorage_StoreEntities(t *testing.T) {
 		config: conf.StorageBackend{},
 	}
 
-	err := consoleStorage.StoreEntities(entities)
+	_, err := consoleStorage.StoreEntities(entities)
 	if err != nil {
 		t.Error(err)
 	}
@@ -112,7 +112,7 @@ func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
 		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "11111111", "a:Periodenr": "03"}},
 	}
 
-	content, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
+	content, stored, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
 	if err != nil {
 		t.Fatalf("expected no error, batch should continue despite bad row: %v", err)
 	}
@@ -127,6 +127,17 @@ func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
 	// valid rows should be sorted ascending by Gardsid: 11111111 before 22222222
 	if strings.Index(got, "11111111") > strings.Index(got, "22222222") {
 		t.Errorf("expected rows to be ordered ascending by Gardsid, got: %q", got)
+	}
+
+	if len(stored) != 2 {
+		t.Fatalf("expected 2 stored entities, got %d", len(stored))
+	}
+	for _, id := range []string{"a:2"} {
+		for _, e := range stored {
+			if e.ID == id {
+				t.Errorf("expected dropped entity %q to be excluded from stored entities", id)
+			}
+		}
 	}
 }
 
@@ -156,7 +167,7 @@ func TestGenerateAndOrderFlatFileContent_DropsPanickingRowKeepsRest(t *testing.T
 		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "33333333", "a:SomeInt": float64(3)}},
 	}
 
-	content, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
+	content, stored, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
 	if err != nil {
 		t.Fatalf("expected no error, batch should continue despite panicking row: %v", err)
 	}
@@ -167,6 +178,15 @@ func TestGenerateAndOrderFlatFileContent_DropsPanickingRowKeepsRest(t *testing.T
 	}
 	if !strings.Contains(got, "11111111") || !strings.Contains(got, "33333333") {
 		t.Errorf("expected good rows to be present, got: %q", got)
+	}
+
+	if len(stored) != 2 {
+		t.Fatalf("expected 2 stored entities, got %d", len(stored))
+	}
+	for _, e := range stored {
+		if e.ID == "a:2" {
+			t.Errorf("expected panicking entity %q to be excluded from stored entities", e.ID)
+		}
 	}
 }
 
