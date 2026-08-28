@@ -227,10 +227,10 @@ func (dh *datasetHandler) datasetStore(c echo.Context) error {
 			}
 			deliverOnceClient = client
 		}
-		err2 := storage.StoreEntities(entities)
+		storedEntities, err2 := storage.StoreEntities(entities)
 
-		if storeConfig.DeliverOnceConfig.Enabled {
-			err := storage.DeliverOnce(entities, deliverOnceClient)
+		if storeConfig.DeliverOnceConfig.Enabled && err2 == nil {
+			err := storage.DeliverOnce(storedEntities, deliverOnceClient)
 			if err != nil {
 				return err
 			}

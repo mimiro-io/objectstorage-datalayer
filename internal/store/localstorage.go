@@ -91,9 +91,9 @@ func (ls *LocalStorage) GetConfig() conf.StorageBackend {
 	return ls.config
 }
 
-func (ls *LocalStorage) StoreEntities(entities []*uda.Entity) error {
+func (ls *LocalStorage) StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error) {
 	if len(entities) == 0 {
-		return nil
+		return nil, nil
 	}
 	content, err := GenerateContent(entities, ls.config, ls.logger)
 	if err != nil {
@@ -107,7 +107,7 @@ func (ls *LocalStorage) StoreEntities(entities []*uda.Entity) error {
 	ls.logger.Debug(key, properties)
 	//result.Location should be in the info log down below.
 	ls.logger.Info("Successfully uploaded to testingnotworking")
-	return nil
+	return entities, nil
 }
 func (ls *LocalStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {
 	if len(entities) == 0 {

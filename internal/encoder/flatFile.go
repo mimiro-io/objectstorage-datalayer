@@ -45,6 +45,11 @@ func (enc *FlatFileEncoder) CloseWithError(err error) error {
 	return enc.writer.CloseWithError(err)
 }
 
+func EncodeFlatFileEntities(entities []*uda.Entity, backend conf.StorageBackend) ([]byte, error) {
+	enc := &FlatFileEncoder{backend: backend}
+	return enc.encode(entities)
+}
+
 func (enc *FlatFileEncoder) encode(entities []*uda.Entity) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	fields := enc.backend.FlatFileConfig.Fields

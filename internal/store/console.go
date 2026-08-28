@@ -40,10 +40,10 @@ func (consoleStorage *ConsoleStorage) GetConfig() conf.StorageBackend {
 	return consoleStorage.config
 }
 
-func (consoleStorage *ConsoleStorage) StoreEntities(entities []*uda.Entity) error {
+func (consoleStorage *ConsoleStorage) StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error) {
 	consoleStorage.Logger.Info("Console stores")
 	consoleStorage.Logger.Infof("Got: %d entities", len(entities))
-	return nil
+	return entities, nil
 }
 
 func (consoleStorage *ConsoleStorage) StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error {

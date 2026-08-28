@@ -27,7 +27,11 @@ type StorageInterface interface {
 	DeliverOnceClientInit() (datahub.Client, error)
 	DeliverOnceVariableCheck() error
 	DeliverOnce(entities []*uda.Entity, client datahub.Client) error
-	StoreEntities(entities []*uda.Entity) error
+	// StoreEntities writes entities to the backend and returns the subset of entities
+	// that were actually stored (some backends may drop individual invalid rows rather
+	// than failing the whole batch). Callers that trigger DeliverOnce should use the
+	// returned entities, not the input, so dropped rows aren't reported as delivered.
+	StoreEntities(entities []*uda.Entity) ([]*uda.Entity, error)
 	StoreEntitiesFullSync(state FullSyncState, entities []*uda.Entity) error
 	GetEntities() (io.Reader, error)
 	GetChanges(since string) (io.Reader, error)
@@ -94,6 +98,89 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 	}
 	return sortedData, nil
 }
+
+func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, []*uda.Entity, error) {
+	type keyedLine struct {
+		line   []byte
+		keys   []int
+		entity *uda.Entity
+	}
+
+	acceptedSortingTypes := []string{"desc", "asc"}
+	if !slices.Contains(acceptedSortingTypes, config.OrderType) {
+		logger.Info("No valid orderType defined. Defaulting to ascending order")
+	}
+
+	var kept []keyedLine
+	for _, e := range entities {
+		lineBytes, ok := safeEncodeFlatFileEntity(e, config, logger)
+		if !ok {
+			continue
+		}
+		if len(lineBytes) == 0 {
+			// entity produced no output line (e.g. no fields matched); nothing to order
+			continue
+		}
+		trimmed := strings.TrimSuffix(string(lineBytes), "\n")
+
+		keys := make([]int, len(config.OrderBy))
+		badRow := false
+		for i, rng := range config.OrderBy {
+			v, err := extractParts(trimmed, rng)
+			if err != nil {
+				logger.Errorw("Unable to parse orderBy value for entity. Dropping row.",
+					"id", e.ID, "position", rng, "error", err)
+				badRow = true
+				break
+			}
+			keys[i] = v
+		}
+		if badRow {
+			continue
+		}
+		kept = append(kept, keyedLine{line: []byte(trimmed), keys: keys, entity: e})
+	}
+
+	sort.Slice(kept, func(i, j int) bool {
+		for idx := range kept[i].keys {
+			a, b := kept[i].keys[idx], kept[j].keys[idx]
+			if a != b {
+				if config.OrderType == "desc" {
+					return a > b
+				}
+				return a < b
+			}
+		}
+		return false
+	})
+
+	var out []byte
+	storedEntities := make([]*uda.Entity, 0, len(kept))
+	for _, k := range kept {
+		out = append(out, k.line...)
+		out = append(out, '\n')
+		storedEntities = append(storedEntities, k.entity)
+	}
+	return out, storedEntities, nil
+}
+
+func safeEncodeFlatFileEntity(e *uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) (line []byte, ok bool) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorw("Panic while encoding entity for flat file. Dropping row.", "id", e.ID, "error", r)
+			line = nil
+			ok = false
+		}
+	}()
+
+	lineBytes, err := encoder.EncodeFlatFileEntities([]*uda.Entity{e}, config)
+	if err != nil {
+		logger.Errorw("Failed to encode entity for flat file. Dropping row.", "id", e.ID, "error", err)
+		return nil, false
+	}
+	return lineBytes, true
+}
+
 func extractParts(s string, i []int) (int, error) {
 	numPart, err := strconv.Atoi(s[i[0]:i[1]])
 	if err != nil {
