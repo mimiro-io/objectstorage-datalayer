@@ -99,12 +99,6 @@ func OrderContent(entities []byte, config conf.StorageBackend, logger *zap.Sugar
 	return sortedData, nil
 }
 
-// GenerateAndOrderFlatFileContent encodes and orders flat file content one entity at a
-// time, so that a single entity with data that cannot be parsed for ordering (e.g. a
-// missing or malformed value in one of the OrderBy fixed-width ranges) is logged and
-// dropped, without causing the whole batch to fail. It returns the generated content
-// along with the subset of entities that were actually kept and written, so callers can
-// avoid treating dropped entities as if they were successfully stored.
 func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) ([]byte, []*uda.Entity, error) {
 	type keyedLine struct {
 		line   []byte
@@ -170,10 +164,6 @@ func GenerateAndOrderFlatFileContent(entities []*uda.Entity, config conf.Storage
 	return out, storedEntities, nil
 }
 
-// safeEncodeFlatFileEntity encodes a single entity to a flat file line, recovering from
-// any panic raised during encoding (e.g. a field value of an unexpected type causing a
-// failed type assertion). Returns ok=false if the entity could not be encoded for any
-// reason, so the caller can log and drop just that row instead of failing the batch.
 func safeEncodeFlatFileEntity(e *uda.Entity, config conf.StorageBackend, logger *zap.SugaredLogger) (line []byte, ok bool) {
 	defer func() {
 		if r := recover(); r != nil {

@@ -94,10 +94,10 @@ func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
 	configJSON := `{
 		"orderBy": [[0,8]],
 		"flatFile": {
-			"fieldOrder": ["Gardsid", "Periodenr"],
+			"fieldOrder": ["FieldA", "FieldB"],
 			"fields": {
-				"Gardsid": {"substring": [[0, 8]]},
-				"Periodenr": {"substring": [[8, 10]]}
+				"FieldA": {"substring": [[0, 8]]},
+				"FieldB": {"substring": [[8, 10]]}
 			}
 		}
 	}`
@@ -107,9 +107,9 @@ func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
 	}
 
 	entities := []*uda.Entity{
-		{ID: "a:1", Properties: map[string]interface{}{"a:Gardsid": "22222222", "a:Periodenr": "02"}},
-		{ID: "a:2", Properties: map[string]interface{}{"a:Periodenr": "01"}}, // missing Gardsid -> bad row
-		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "11111111", "a:Periodenr": "03"}},
+		{ID: "a:1", Properties: map[string]interface{}{"a:FieldA": "22222222", "a:FieldB": "02"}},
+		{ID: "a:2", Properties: map[string]interface{}{"a:FieldB": "01"}}, // missing FieldA -> bad row
+		{ID: "a:3", Properties: map[string]interface{}{"a:FieldA": "11111111", "a:FieldB": "03"}},
 	}
 
 	content, stored, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
@@ -119,14 +119,14 @@ func TestGenerateAndOrderFlatFileContent_DropsBadRowKeepsRest(t *testing.T) {
 
 	got := string(content)
 	if strings.Contains(got, "  ") {
-		t.Errorf("expected bad row to be dropped, got content containing blank Gardsid: %q", got)
+		t.Errorf("expected bad row to be dropped, got content containing blank FieldA: %q", got)
 	}
 	if !strings.Contains(got, "1111111103") || !strings.Contains(got, "2222222202") {
 		t.Errorf("expected the two valid rows to be present and ordered, got: %q", got)
 	}
-	// valid rows should be sorted ascending by Gardsid: 11111111 before 22222222
+	// valid rows should be sorted ascending by FieldA: 11111111 before 22222222
 	if strings.Index(got, "11111111") > strings.Index(got, "22222222") {
-		t.Errorf("expected rows to be ordered ascending by Gardsid, got: %q", got)
+		t.Errorf("expected rows to be ordered ascending by FieldA, got: %q", got)
 	}
 
 	if len(stored) != 2 {
@@ -149,10 +149,10 @@ func TestGenerateAndOrderFlatFileContent_DropsPanickingRowKeepsRest(t *testing.T
 	configJSON := `{
 		"orderBy": [[0,8]],
 		"flatFile": {
-			"fieldOrder": ["Gardsid", "SomeInt"],
+			"fieldOrder": ["FieldA", "FieldC"],
 			"fields": {
-				"Gardsid": {"substring": [[0, 8]]},
-				"SomeInt": {"substring": [[8, 10]], "type": "integer"}
+				"FieldA": {"substring": [[0, 8]]},
+				"FieldC": {"substring": [[8, 10]], "type": "integer"}
 			}
 		}
 	}`
@@ -162,9 +162,9 @@ func TestGenerateAndOrderFlatFileContent_DropsPanickingRowKeepsRest(t *testing.T
 	}
 
 	entities := []*uda.Entity{
-		{ID: "a:1", Properties: map[string]interface{}{"a:Gardsid": "11111111", "a:SomeInt": float64(2)}},
-		{ID: "a:2", Properties: map[string]interface{}{"a:Gardsid": "22222222", "a:SomeInt": "not-a-number"}}, // wrong type -> panics
-		{ID: "a:3", Properties: map[string]interface{}{"a:Gardsid": "33333333", "a:SomeInt": float64(3)}},
+		{ID: "a:1", Properties: map[string]interface{}{"a:FieldA": "11111111", "a:FieldC": float64(2)}},
+		{ID: "a:2", Properties: map[string]interface{}{"a:FieldA": "22222222", "a:FieldC": "not-a-number"}}, // wrong type -> panics
+		{ID: "a:3", Properties: map[string]interface{}{"a:FieldA": "33333333", "a:FieldC": float64(3)}},
 	}
 
 	content, stored, err := GenerateAndOrderFlatFileContent(entities, backend, zap.NewNop().Sugar())
